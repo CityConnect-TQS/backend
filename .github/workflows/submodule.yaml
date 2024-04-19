@@ -1,0 +1,28 @@
+name: Update submodule in control-room
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  submodule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          repository: CityConnect-TQS/control-room
+          token: ${{ secrets.PRIVATE_TOKEN }}
+          submodules: recursive
+
+      - name: Setup GitHub Actions user
+        uses: fregante/setup-git-user@v2
+
+      - name: Update submodule
+        run: git submodule update --merge --recursive --remote
+
+      - name: Commit & push changes
+        run: |
+          git commit -am "Update submodules" || echo "No changes to commit"
+          git push
