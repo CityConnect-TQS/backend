@@ -20,7 +20,7 @@ jobs:
         uses: fregante/setup-git-user@v2
 
       - name: Update submodule
-        run: git submodule update --merge --recursive --remote
+        run: git submodule update --recursive --remote
 
       - name: Commit & push changes
         run: |
