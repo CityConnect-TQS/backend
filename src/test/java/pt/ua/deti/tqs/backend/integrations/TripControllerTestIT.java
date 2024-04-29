@@ -88,7 +88,7 @@ class TripControllerTestIT {
         trip.setPrice(10.0);
 
         RestAssured.given().contentType(ContentType.JSON).body(trip)
-                   .when().post(BASE_URL + "/api/trip")
+                   .when().post(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) trip.getPrice()))
                    .body("departure.name", equalTo(trip.getDeparture().getName()))
@@ -116,7 +116,7 @@ class TripControllerTestIT {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip")
+        RestAssured.when().get(BASE_URL + "/api/public/trip")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("price", hasItems((float) trip1.getPrice(), (float) trip2.getPrice()))
@@ -135,7 +135,7 @@ class TripControllerTestIT {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip?currency=USD")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("price", not(hasItems((float) trip1.getPrice(), (float) trip2.getPrice())));
@@ -146,7 +146,7 @@ class TripControllerTestIT {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip?currency=EUR")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?currency=EUR")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("price", hasItems((float) trip1.getPrice(), (float) trip2.getPrice()));
@@ -157,7 +157,7 @@ class TripControllerTestIT {
         Trip trip1 = createTestTrip("Aveiro", "Porto");
         createTestTrip("Porto", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=" + trip1.getDeparture().getId())
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=" + trip1.getDeparture().getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("price", hasItems((float) trip1.getPrice()))
@@ -174,7 +174,7 @@ class TripControllerTestIT {
         createTestTrip("Aveiro", "Porto");
         createTestTrip("Porto", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=999")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=999")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
     }
@@ -184,7 +184,7 @@ class TripControllerTestIT {
         Trip trip1 = createTestTrip("Aveiro", "Porto");
         createTestTrip("Porto", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?arrival=" + trip1.getArrival().getId())
+        RestAssured.when().get(BASE_URL + "/api/public/trip?arrival=" + trip1.getArrival().getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("price", hasItems((float) trip1.getPrice()))
@@ -195,7 +195,7 @@ class TripControllerTestIT {
                          hasItems(trip1.getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                    .body("arrivalTime", hasItems(trip1.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
 
-        RestAssured.when().get(BASE_URL + "/api/trip?arrival=999")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?arrival=999")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
     }
@@ -205,7 +205,7 @@ class TripControllerTestIT {
         createTestTrip("Aveiro", "Porto");
         createTestTrip("Porto", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?arrival=999")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?arrival=999")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
     }
@@ -216,7 +216,7 @@ class TripControllerTestIT {
         createTestTrip("Porto", "Lisboa");
         createTestTrip("Aveiro", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=" + trip1.getDeparture().getId()
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=" + trip1.getDeparture().getId()
                                        + "&arrival=" + trip1.getArrival().getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
@@ -228,7 +228,7 @@ class TripControllerTestIT {
                          hasItems(trip1.getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                    .body("arrivalTime", hasItems(trip1.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=999&arrival=999")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=999&arrival=999")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
     }
@@ -239,7 +239,7 @@ class TripControllerTestIT {
         createTestTrip("Porto", "Lisboa");
         createTestTrip("Aveiro", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=999&arrival=999")
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=999&arrival=999")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
     }
@@ -250,7 +250,7 @@ class TripControllerTestIT {
         createTestTrip("Porto", "Lisboa");
         createTestTrip("Aveiro", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=" + trip1.getDeparture().getId()
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=" + trip1.getDeparture().getId()
                                        + "&arrival=" + trip1.getArrival().getId()
                                        + "&departureTime=" + trip1.getDepartureTime().minusHours(1))
                    .then().statusCode(HttpStatus.OK.value())
@@ -270,7 +270,7 @@ class TripControllerTestIT {
         createTestTrip("Porto", "Lisboa");
         createTestTrip("Aveiro", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=999&arrival=999&departureTime="
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=999&arrival=999&departureTime="
                                        + LocalDateTime.now().plusHours(1))
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
@@ -282,7 +282,7 @@ class TripControllerTestIT {
         createTestTrip("Porto", "Lisboa");
         createTestTrip("Aveiro", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=" + trip1.getDeparture().getId()
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=" + trip1.getDeparture().getId()
                                        + "&arrival=" + trip1.getArrival().getId()
                                        + "&departureTime=" + trip1.getDepartureTime().minusHours(1)
                                        + "&seats=20")
@@ -303,7 +303,7 @@ class TripControllerTestIT {
         createTestTrip("Porto", "Lisboa");
         createTestTrip("Aveiro", "Lisboa");
 
-        RestAssured.when().get(BASE_URL + "/api/trip?departure=999&arrival=999&departureTime="
+        RestAssured.when().get(BASE_URL + "/api/public/trip?departure=999&arrival=999&departureTime="
                                        + LocalDateTime.now().plusHours(1) + "&seats=999")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
@@ -313,7 +313,7 @@ class TripControllerTestIT {
     void whenGetTripById_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip/" + trip.getId())
+        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) trip.getPrice()))
                    .body("departure.name", equalTo(trip.getDeparture().getName()))
@@ -328,7 +328,7 @@ class TripControllerTestIT {
     void whenGetTripByIdWithCurrencyUsd_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip/" + trip.getId() + "?currency=USD")
+        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", not(equalTo((float) trip.getPrice())));
     }
@@ -337,14 +337,14 @@ class TripControllerTestIT {
     void whenGetTripByIdWithCurrencyEur_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip/" + trip.getId() + "?currency=EUR")
+        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=EUR")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) trip.getPrice()));
     }
 
     @Test
     void whenGetTripByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/trip/999")
+        RestAssured.when().get(BASE_URL + "/api/public/trip/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -352,7 +352,7 @@ class TripControllerTestIT {
     void whenGetReservationsByTripIdAndNoTripsFound_thenStatus404() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/trip/" + trip.getId() + "/reservations")
+        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -362,7 +362,7 @@ class TripControllerTestIT {
 
         trip.setPrice(20.0);
         RestAssured.given().contentType(ContentType.JSON).body(trip)
-                   .when().put(BASE_URL + "/api/trip/" + trip.getId())
+                   .when().put(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) trip.getPrice()));
 
@@ -377,7 +377,7 @@ class TripControllerTestIT {
 
         trip.setPrice(20.0);
         RestAssured.given().contentType(ContentType.JSON).body(trip)
-                   .when().put(BASE_URL + "/api/trip/999")
+                   .when().put(BASE_URL + "/api/backoffice/trip/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -385,7 +385,7 @@ class TripControllerTestIT {
     void whenDeleteTrip_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().delete(BASE_URL + "/api/trip/" + trip.getId())
+        RestAssured.when().delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(trip.getId())).isEmpty();

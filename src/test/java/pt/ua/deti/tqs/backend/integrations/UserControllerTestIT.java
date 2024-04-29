@@ -84,7 +84,7 @@ class UserControllerTestIT {
 
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"username\":\"johndoe\",\"password\":\"password\",\"name\":\"John Doe\",\"email\":\"johndoe@ua.pt\"}")
-                   .when().post(BASE_URL + "/api/user")
+                   .when().post(BASE_URL + "/api/public/user")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("username", equalTo(user.getUsername()))
                    .body("name", equalTo(user.getName()))
@@ -100,7 +100,7 @@ class UserControllerTestIT {
     void whenGetUserById_thenStatus200() {
         User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
 
-        RestAssured.when().get(BASE_URL + "/api/user/" + user.getId())
+        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("name", equalTo(user.getName()))
                    .body("email", equalTo(user.getEmail()))
@@ -109,7 +109,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/user/999")
+        RestAssured.when().get(BASE_URL + "/api/public/user/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -119,7 +119,7 @@ class UserControllerTestIT {
 
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password\"}")
-                   .when().post(BASE_URL + "/api/user/login")
+                   .when().post(BASE_URL + "/api/public/user/login")
                    .then().statusCode(200)
                    .body("name", is(user.getName()))
                    .body("email", is(user.getEmail()))
@@ -132,7 +132,7 @@ class UserControllerTestIT {
 
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password123\"}")
-                   .when().post(BASE_URL + "/api/user/login")
+                   .when().post(BASE_URL + "/api/public/user/login")
                    .then().statusCode(401);
     }
 
@@ -141,7 +141,7 @@ class UserControllerTestIT {
         User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password");
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/user/" + user.getId() + "/reservations")
+        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("id", hasItems(reservation.getId().intValue()));
@@ -152,7 +152,7 @@ class UserControllerTestIT {
         User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password");
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/user/" + user.getId() + "/reservations?currency=EUR")
+        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=EUR")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("id", hasItems(reservation.getId().intValue()))
@@ -164,7 +164,7 @@ class UserControllerTestIT {
         User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password");
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/user/" + user.getId() + "/reservations?currency=USD")
+        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("id", hasItems(reservation.getId().intValue()))
@@ -178,7 +178,7 @@ class UserControllerTestIT {
         user.setName("Jane Doe");
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"name\":\"Jane Doe\", \"email\":\"johndoe@ua.pt\", \"username\":\"johndoe\", \"password\":\"password\"}")
-                   .when().put(BASE_URL + "/api/user/" + user.getId())
+                   .when().put(BASE_URL + "/api/public/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(user.getName()));
 
         User updated = repository.findById(user.getId()).orElse(null);
@@ -190,7 +190,7 @@ class UserControllerTestIT {
         User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
 
         RestAssured.given().contentType(ContentType.JSON).body(user)
-                   .when().put(BASE_URL + "/api/user/999")
+                   .when().put(BASE_URL + "/api/public/user/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -198,7 +198,7 @@ class UserControllerTestIT {
     void whenDeleteUser_thenStatus200() {
         User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
 
-        RestAssured.when().delete(BASE_URL + "/api/user/" + user.getId())
+        RestAssured.when().delete(BASE_URL + "/api/public/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(user.getId())).isEmpty();
