@@ -26,7 +26,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.*;
 
-@WebMvcTest(TripBackofficeController.class)
+@WebMvcTest({TripController.class, TripBackofficeController.class})
 class TripControllerTest {
     @Autowired
     private MockMvc mvc;
@@ -42,7 +42,7 @@ class TripControllerTest {
     }
 
     @Test
-    void whenPostTrip_thenCreateTrip() throws Exception {
+    void whenPostTrip_thenCreateTrip() {
         City city1 = new City();
         city1.setId(1L);
         city1.setName("Porto");
@@ -67,7 +67,7 @@ class TripControllerTest {
         when(service.createTrip(Mockito.any())).thenReturn(trip);
 
         RestAssuredMockMvc.given().mockMvc(mvc).contentType(ContentType.JSON).body(trip)
-                          .when().post("/api/trip")
+                          .when().post("/api/backoffice/trip")
                           .then().statusCode(201)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
@@ -114,7 +114,7 @@ class TripControllerTest {
         when(service.getTrips(Mockito.any(), Mockito.eq(null))).thenReturn(List.of(trip1, trip2));
 
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().get("/api/trip")
+                          .when().get("/api/public/trip")
                           .then().statusCode(200)
                           .body("[0].price", is((float) trip1.getPrice()))
                           .body("[0].bus.capacity", is(trip1.getBus().getCapacity()))
@@ -168,7 +168,8 @@ class TripControllerTest {
         when(service.getTrips(Mockito.any(), Mockito.eq(null))).thenReturn(List.of(trip1, trip2));
 
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().get("/api/trip?departure=1&arrival=2&departureTime=2024-03-29T00:00:00&seats=2")
+                          .when()
+                          .get("/api/public/trip?departure=1&arrival=2&departureTime=2024-03-29T00:00:00&seats=2")
                           .then().statusCode(200)
                           .body("[0].price", is((float) trip1.getPrice()))
                           .body("[0].bus.capacity", is(trip1.getBus().getCapacity()))
@@ -205,7 +206,7 @@ class TripControllerTest {
         when(service.getTrip(1L, null)).thenReturn(trip);
 
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().get("/api/trip/1")
+                          .when().get("/api/public/trip/1")
                           .then().statusCode(200)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
@@ -243,7 +244,7 @@ class TripControllerTest {
         when(service.getTrip(1L, Currency.USD)).thenReturn(trip);
 
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().get("/api/trip/1?currency=USD")
+                          .when().get("/api/public/trip/1?currency=USD")
                           .then().statusCode(200)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
@@ -260,7 +261,7 @@ class TripControllerTest {
         when(service.getTrip(1L, null)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().get("/api/trip/1")
+                          .when().get("/api/public/trip/1")
                           .then().statusCode(404);
 
         verify(service, times(1)).getTrip(1L, null);
@@ -297,7 +298,7 @@ class TripControllerTest {
         when(reservationService.getReservationsByTripId(1L, null)).thenReturn(List.of(reservation));
 
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().get("/api/trip/1/reservations")
+                          .when().get("/api/backoffice/trip/1/reservations")
                           .then().statusCode(200)
                           .body("[0].seats", is(1))
                           .body("[0].trip.id", is(1));
@@ -331,7 +332,7 @@ class TripControllerTest {
         when(service.updateTrip(Mockito.any())).thenReturn(trip);
 
         RestAssuredMockMvc.given().mockMvc(mvc).contentType(ContentType.JSON).body(trip)
-                          .when().put("/api/trip/1")
+                          .when().put("/api/backoffice/trip/1")
                           .then().statusCode(200)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
@@ -346,7 +347,7 @@ class TripControllerTest {
     @Test
     void whenDeleteTrip_thenDeleteTrip() throws Exception {
         RestAssuredMockMvc.given().mockMvc(mvc)
-                          .when().delete("/api/trip/1")
+                          .when().delete("/api/backoffice/trip/1")
                           .then().statusCode(200);
 
         verify(service, times(1)).deleteTrip(1L);

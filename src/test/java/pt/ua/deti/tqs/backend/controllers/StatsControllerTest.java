@@ -26,7 +26,7 @@ class StatsControllerTest {
         when(service.getCacheMisses()).thenReturn(0);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/stats")
+                          .when().get("/api/backoffice/stats")
                           .then().statusCode(200)
                           .body("totalRequests", is(1))
                           .body("cacheMisses", is(0));

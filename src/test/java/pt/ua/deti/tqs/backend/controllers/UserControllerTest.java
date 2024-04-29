@@ -43,7 +43,7 @@ class UserControllerTest {
         when(service.createUser(Mockito.any())).thenReturn(user);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
-                          .when().post("/api/user")
+                          .when().post("/api/public/user")
                           .then().statusCode(201)
                           .body("id", is(1))
                           .body("name", is("John Doe"))
@@ -65,7 +65,7 @@ class UserControllerTest {
         when(service.getUser(1L)).thenReturn(user);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/user/1")
+                          .when().get("/api/public/user/1")
                           .then().statusCode(200)
                           .body("id", is(1))
                           .body("name", is("John Doe"))
@@ -80,7 +80,7 @@ class UserControllerTest {
         when(service.getUser(1L)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/user/1")
+                          .when().get("/api/public/user/1")
                           .then().statusCode(404);
 
         verify(service, times(1)).getUser(1L);
@@ -99,7 +99,7 @@ class UserControllerTest {
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON)
                           .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password\"}")
-                          .when().post("/api/user/login")
+                          .when().post("/api/public/user/login")
                           .then().statusCode(200)
                           .body("id", is(1))
                           .body("name", is(user.getName()))
@@ -116,7 +116,7 @@ class UserControllerTest {
         when(service.loginUser("wrongEmail", "wrongPassword")).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
-                          .when().post("/api/user/login")
+                          .when().post("/api/public/user/login")
                           .then().statusCode(401);
     }
 
@@ -136,7 +136,7 @@ class UserControllerTest {
         when(reservationService.getReservationsByUserId(1L, null)).thenReturn(List.of(reservation));
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/user/1/reservations")
+                          .when().get("/api/public/user/1/reservations")
                           .then().statusCode(200)
                           .body("$", hasSize(1))
                           .body("[0].id", is(1));
@@ -156,7 +156,7 @@ class UserControllerTest {
         when(service.updateUser(Mockito.any(User.class))).then(returnsFirstArg());
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
-                          .when().put("/api/user/1")
+                          .when().put("/api/public/user/1")
                           .then().statusCode(200)
                           .body("id", is(1))
                           .body("name", is("John Doe"))
@@ -169,7 +169,7 @@ class UserControllerTest {
     @Test
     void whenDeleteUser_thenDeleteUser() {
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().delete("/api/user/1")
+                          .when().delete("/api/public/user/1")
                           .then().statusCode(200);
 
         verify(service, times(1)).deleteUser(1L);

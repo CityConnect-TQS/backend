@@ -38,7 +38,7 @@ class CityControllerTest {
         when(service.createCity(Mockito.any())).thenReturn(city);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(city)
-                          .when().post("/api/city")
+                          .when().post("/api/backoffice/city")
                           .then().statusCode(HttpStatus.CREATED.value())
                           .body("name", is("Aveiro"));
 
@@ -60,7 +60,7 @@ class CityControllerTest {
         when(service.getAllCities()).thenReturn(Arrays.asList(city1, city2, city3));
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/city")
+                          .when().get("/api/backoffice/city")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("$", hasSize(3))
                           .body("[0].name", is("Aveiro"))
@@ -79,7 +79,7 @@ class CityControllerTest {
         when(service.getCity(1L)).thenReturn(city);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/city/1")
+                          .when().get("/api/backoffice/city/1")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("name", is("Aveiro"));
 
@@ -95,7 +95,7 @@ class CityControllerTest {
         when(service.getCitiesByName("Aveiro")).thenReturn(List.of(city));
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/city?name=Aveiro")
+                          .when().get("/api/backoffice/city?name=Aveiro")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("[0].name", is("Aveiro"));
 
@@ -107,7 +107,7 @@ class CityControllerTest {
         when(service.getCity(1L)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/city/1")
+                          .when().get("/api/backoffice/city/1")
                           .then().statusCode(HttpStatus.NOT_FOUND.value());
 
         verify(service, times(1)).getCity(1L);
@@ -122,7 +122,7 @@ class CityControllerTest {
         when(service.updateCity(Mockito.any(City.class))).then(returnsFirstArg());
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(city)
-                          .when().put("/api/city/1")
+                          .when().put("/api/backoffice/city/1")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("name", is("Aveiro"));
 
@@ -132,7 +132,7 @@ class CityControllerTest {
     @Test
     void whenDeleteCity_thenDeleteCity() {
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().delete("/api/city/1")
+                          .when().delete("/api/backoffice/city/1")
                           .then().statusCode(HttpStatus.OK.value());
 
         verify(service, times(1)).deleteCity(1L);
