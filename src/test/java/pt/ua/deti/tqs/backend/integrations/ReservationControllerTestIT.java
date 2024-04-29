@@ -108,7 +108,7 @@ class ReservationControllerTestIT {
         reservation.setSeats(1);
 
         RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .when().post(BASE_URL + "/api/reservation")
+                   .when().post(BASE_URL + "/api/public/reservation")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
@@ -156,7 +156,7 @@ class ReservationControllerTestIT {
         reservation.setSeats(51);
 
         RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .when().post(BASE_URL + "/api/reservation")
+                   .when().post(BASE_URL + "/api/public/reservation")
                    .then().statusCode(HttpStatus.BAD_REQUEST.value());
     }
 
@@ -165,7 +165,7 @@ class ReservationControllerTestIT {
         Reservation reservation1 = createTestReservation();
         Reservation reservation2 = createTestReservation();
 
-        RestAssured.when().get(BASE_URL + "/api/reservation")
+        RestAssured.when().get(BASE_URL + "/api/backoffice/reservation")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("price", hasItems((float) reservation1.getPrice(), (float) reservation2.getPrice()))
@@ -191,7 +191,7 @@ class ReservationControllerTestIT {
     void whenGetReservationById_thenStatus200() {
         Reservation reservation = createTestReservation();
 
-        RestAssured.when().get(BASE_URL + "/api/reservation/" + reservation.getId())
+        RestAssured.when().get(BASE_URL + "/api/public/reservation/" + reservation.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
@@ -209,7 +209,7 @@ class ReservationControllerTestIT {
     void whenGetReservationByIdAndCurrencyEuro_thenStatus200() {
         Reservation reservation = createTestReservation();
 
-        RestAssured.when().get(BASE_URL + "/api/reservation/" + reservation.getId() + "?currency=EUR")
+        RestAssured.when().get(BASE_URL + "/api/public/reservation/" + reservation.getId() + "?currency=EUR")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
@@ -227,7 +227,7 @@ class ReservationControllerTestIT {
     void whenGetReservationByIdAndCurrencyUsd_thenStatus200() {
         Reservation reservation = createTestReservation();
 
-        RestAssured.when().get(BASE_URL + "/api/reservation/" + reservation.getId() + "?currency=USD")
+        RestAssured.when().get(BASE_URL + "/api/public/reservation/" + reservation.getId() + "?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", not(equalTo((float) reservation.getPrice())))
                    .body("seats", equalTo(reservation.getSeats()))
@@ -243,7 +243,7 @@ class ReservationControllerTestIT {
 
     @Test
     void whenGetReservationByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/reservation/999")
+        RestAssured.when().get(BASE_URL + "/api/public/reservation/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -254,7 +254,7 @@ class ReservationControllerTestIT {
         reservation.setPrice(20.0);
 
         RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .when().put(BASE_URL + "/api/reservation/" + reservation.getId())
+                   .when().put(BASE_URL + "/api/backoffice/reservation/" + reservation.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()));
@@ -269,7 +269,7 @@ class ReservationControllerTestIT {
         Reservation reservation = createTestReservation();
 
         RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .when().put(BASE_URL + "/api/reservation/999")
+                   .when().put(BASE_URL + "/api/backoffice/reservation/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -277,7 +277,7 @@ class ReservationControllerTestIT {
     void whenDeleteReservation_thenStatus200() {
         Reservation reservation = createTestReservation();
 
-        RestAssured.when().delete(BASE_URL + "/api/reservation/" + reservation.getId())
+        RestAssured.when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         Reservation found = repository.findById(reservation.getId()).orElse(null);
@@ -287,7 +287,7 @@ class ReservationControllerTestIT {
     @Test
     void whenDeleteReservationWithInvalidId_thenStatus200() {
         // This assures the trip != null conditionl
-        RestAssured.when().delete(BASE_URL + "/api/reservation/999")
+        RestAssured.when().delete(BASE_URL + "/api/public/reservation/999")
                    .then().statusCode(HttpStatus.OK.value());
 
         Reservation found = repository.findById(999L).orElse(null);

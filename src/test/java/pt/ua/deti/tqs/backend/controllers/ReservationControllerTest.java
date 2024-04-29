@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.controllers.backoffice.ReservationBackofficeController;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.entities.User;
@@ -19,7 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 
-@WebMvcTest(ReservationController.class)
+@WebMvcTest({ReservationBackofficeController.class, ReservationController.class})
 class ReservationControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -45,7 +46,7 @@ class ReservationControllerTest {
         when(service.createReservation(Mockito.any(), eq(null))).thenReturn(reservation);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(reservation)
-                          .when().post("/api/reservation")
+                          .when().post("/api/public/reservation")
                           .then().statusCode(201)
                           .body("seats", is(2))
                           .body("price", is(10.0F))
@@ -87,7 +88,7 @@ class ReservationControllerTest {
         when(service.getAllReservations(null)).thenReturn(Arrays.asList(reservation1, reservation2, reservation3));
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/reservation")
+                          .when().get("/api/backoffice/reservation")
                           .then().statusCode(200)
                           .body("$", hasSize(3))
                           .body("[0].seats", is(2))
@@ -124,7 +125,7 @@ class ReservationControllerTest {
         when(service.getReservation(1L, null)).thenReturn(reservation);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/reservation/1")
+                          .when().get("/api/public/reservation/1")
                           .then().statusCode(200)
                           .body("seats", is(2))
                           .body("price", is(10.0f))
@@ -139,7 +140,7 @@ class ReservationControllerTest {
         when(service.getReservation(1L, null)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/reservation/1")
+                          .when().get("/api/public/reservation/1")
                           .then().statusCode(404);
 
         verify(service, times(1)).getReservation(1L, null);
@@ -163,7 +164,7 @@ class ReservationControllerTest {
         when(service.updateReservation(Mockito.any(), Mockito.eq(null))).thenReturn(reservation);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(reservation)
-                          .when().put("/api/reservation/1")
+                          .when().put("/api/backoffice/reservation/1")
                           .then().statusCode(200)
                           .body("seats", is(2))
                           .body("price", is(10.0f))
@@ -176,7 +177,7 @@ class ReservationControllerTest {
     @Test
     void whenDeleteReservation_thenDeleteReservation() {
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().delete("/api/reservation/1")
+                          .when().delete("/api/public/reservation/1")
                           .then().statusCode(200);
 
         verify(service, times(1)).deleteReservationById(1L);

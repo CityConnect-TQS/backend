@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.controllers.backoffice.StatsController;
 import pt.ua.deti.tqs.backend.services.StatsService;
 
 import static org.hamcrest.Matchers.is;
@@ -25,7 +26,7 @@ class StatsControllerTest {
         when(service.getCacheMisses()).thenReturn(0);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/stats")
+                          .when().get("/api/backoffice/stats")
                           .then().statusCode(200)
                           .body("totalRequests", is(1))
                           .body("cacheMisses", is(0));

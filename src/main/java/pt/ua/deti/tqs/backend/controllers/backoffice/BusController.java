@@ -1,4 +1,4 @@
-package pt.ua.deti.tqs.backend.controllers;
+package pt.ua.deti.tqs.backend.controllers.backoffice;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -13,7 +13,7 @@ import pt.ua.deti.tqs.backend.services.BusService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/bus")
+@RequestMapping("api/backoffice/bus")
 @Tag(name = "Bus")
 @AllArgsConstructor
 public class BusController {

@@ -62,7 +62,7 @@ class BusControllerTestIT {
         bus.setCapacity(50);
 
         RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().post(BASE_URL + "/api/bus")
+                   .when().post(BASE_URL + "/api/backoffice/bus")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("capacity", equalTo(bus.getCapacity()));
 
@@ -75,7 +75,7 @@ class BusControllerTestIT {
         Bus bus1 = createTestBus(50);
         Bus bus2 = createTestBus(60);
 
-        RestAssured.when().get(BASE_URL + "/api/bus")
+        RestAssured.when().get(BASE_URL + "/api/backoffice/bus")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("capacity", hasItems(bus1.getCapacity(), bus2.getCapacity()));
@@ -85,14 +85,14 @@ class BusControllerTestIT {
     void whenGetBusById_thenStatus200() {
         Bus bus = createTestBus(50);
 
-        RestAssured.when().get(BASE_URL + "/api/bus/" + bus.getId())
+        RestAssured.when().get(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("capacity", equalTo(bus.getCapacity()));
     }
 
     @Test
     void whenGetBusByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/bus/999")
+        RestAssured.when().get(BASE_URL + "/api/backoffice/bus/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -102,7 +102,7 @@ class BusControllerTestIT {
 
         bus.setCapacity(60);
         RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().put(BASE_URL + "/api/bus/" + bus.getId())
+                   .when().put(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("capacity", equalTo(bus.getCapacity()));
 
@@ -115,7 +115,7 @@ class BusControllerTestIT {
         Bus bus = createTestBus(50);
 
         RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().put(BASE_URL + "/api/bus/999")
+                   .when().put(BASE_URL + "/api/backoffice/bus/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -123,7 +123,7 @@ class BusControllerTestIT {
     void whenDeleteBus_thenStatus200() {
         Bus bus = createTestBus(50);
 
-        RestAssured.when().delete(BASE_URL + "/api/bus/" + bus.getId())
+        RestAssured.when().delete(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(bus.getId())).isEmpty();

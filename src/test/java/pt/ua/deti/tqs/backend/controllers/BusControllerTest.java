@@ -2,7 +2,6 @@ package pt.ua.deti.tqs.backend.controllers;
 
 import io.restassured.http.ContentType;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.controllers.backoffice.BusController;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.services.BusService;
 
@@ -37,7 +37,7 @@ class BusControllerTest {
         when(service.createBus(Mockito.any())).thenReturn(bus);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(ContentType.JSON).body(bus)
-                          .when().post("/api/bus")
+                          .when().post("/api/backoffice/bus")
                           .then().statusCode(HttpStatus.CREATED.value())
                           .body("capacity", is(50));
 
@@ -59,7 +59,7 @@ class BusControllerTest {
         when(service.getAllBuses()).thenReturn(Arrays.asList(bus1, bus2, bus3));
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/bus")
+                          .when().get("/api/backoffice/bus")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("$", hasSize(3))
                           .body("[0].capacity", is(50))
@@ -78,7 +78,7 @@ class BusControllerTest {
         when(service.getBus(1L)).thenReturn(bus);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/bus/1")
+                          .when().get("/api/backoffice/bus/1")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("capacity", is(50));
 
@@ -90,7 +90,7 @@ class BusControllerTest {
         when(service.getBus(1L)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/bus/1")
+                          .when().get("/api/backoffice/bus/1")
                           .then().statusCode(HttpStatus.NOT_FOUND.value());
 
         verify(service, times(1)).getBus(1L);
@@ -104,7 +104,7 @@ class BusControllerTest {
         when(service.updateBus(Mockito.any(Bus.class))).then(returnsFirstArg());
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(ContentType.JSON).body(bus)
-                          .when().put("/api/bus/1")
+                          .when().put("/api/backoffice/bus/1")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("capacity", is(50));
 
@@ -114,7 +114,7 @@ class BusControllerTest {
     @Test
     void whenDeleteBusById_thenDeleteBus() {
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().delete("/api/bus/1")
+                          .when().delete("/api/backoffice/bus/1")
                           .then().statusCode(HttpStatus.OK.value());
 
         verify(service, times(1)).deleteBus(1L);
