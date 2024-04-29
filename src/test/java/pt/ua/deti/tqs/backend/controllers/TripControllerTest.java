@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.controllers.backoffice.TripBackofficeController;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Reservation;
@@ -25,7 +26,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.*;
 
-@WebMvcTest(TripController.class)
+@WebMvcTest(TripBackofficeController.class)
 class TripControllerTest {
     @Autowired
     private MockMvc mvc;
