@@ -14,7 +14,7 @@ import pt.ua.deti.tqs.backend.services.CityService;
 import java.util.List;
 
 @RestController
-@RequestMapping("backoffice/city")
+@RequestMapping("api/backoffice/city")
 @Tag(name = "City")
 @AllArgsConstructor
 public class CityController {

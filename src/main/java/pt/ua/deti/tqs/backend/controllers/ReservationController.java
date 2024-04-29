@@ -12,7 +12,7 @@ import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.services.ReservationService;
 
 @RestController
-@RequestMapping("public/reservation")
+@RequestMapping("api/public/reservation")
 @Tag(name = "Reservation")
 @AllArgsConstructor
 public class ReservationController {

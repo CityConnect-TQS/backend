@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("public/trip")
+@RequestMapping("api/public/trip")
 @Tag(name = "Trip")
 @AllArgsConstructor
 public class TripController {

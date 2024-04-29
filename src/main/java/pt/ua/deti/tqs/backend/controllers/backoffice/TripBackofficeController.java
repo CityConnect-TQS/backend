@@ -12,13 +12,11 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.services.ReservationService;
 import pt.ua.deti.tqs.backend.services.TripService;
-import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("backoffice/trip")
+@RequestMapping("api/backoffice/trip")
 @Tag(name = "Trip")
 @AllArgsConstructor
 public class TripBackofficeController {

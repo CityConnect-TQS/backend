@@ -16,7 +16,7 @@ import pt.ua.deti.tqs.backend.services.UserService;
 import java.util.List;
 
 @RestController
-@RequestMapping("public/user")
+@RequestMapping("api/public/user")
 @Tag(name = "User")
 @AllArgsConstructor
 public class UserController {

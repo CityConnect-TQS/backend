@@ -14,7 +14,7 @@ import pt.ua.deti.tqs.backend.services.ReservationService;
 import java.util.List;
 
 @RestController
-@RequestMapping("backoffice/reservation")
+@RequestMapping("api/backoffice/reservation")
 @Tag(name = "Reservation")
 @AllArgsConstructor
 public class ReservationBackofficeController {

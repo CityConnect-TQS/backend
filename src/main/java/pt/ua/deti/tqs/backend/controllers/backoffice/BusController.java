@@ -13,7 +13,7 @@ import pt.ua.deti.tqs.backend.services.BusService;
 import java.util.List;
 
 @RestController
-@RequestMapping("backoffice/bus")
+@RequestMapping("api/backoffice/bus")
 @Tag(name = "Bus")
 @AllArgsConstructor
 public class BusController {

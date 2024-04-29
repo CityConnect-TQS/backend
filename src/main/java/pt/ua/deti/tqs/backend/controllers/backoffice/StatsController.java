@@ -12,7 +12,7 @@ import pt.ua.deti.tqs.backend.entities.Stats;
 import pt.ua.deti.tqs.backend.services.StatsService;
 
 @RestController
-@RequestMapping("backoffice/stats")
+@RequestMapping("api/backoffice/stats")
 @Tag(name = "Stats")
 @AllArgsConstructor
 public class StatsController {
