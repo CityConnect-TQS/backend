@@ -1,4 +1,4 @@
-package pt.ua.deti.tqs.backend.controllers;
+package pt.ua.deti.tqs.backend.controllers.backoffice;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,13 +12,13 @@ import pt.ua.deti.tqs.backend.entities.Stats;
 import pt.ua.deti.tqs.backend.services.StatsService;
 
 @RestController
-@RequestMapping("api/stats")
+@RequestMapping("backoffice/stats")
 @Tag(name = "Stats")
 @AllArgsConstructor
 public class StatsController {
     private final StatsService statsService;
 
-    @GetMapping()
+    @GetMapping
     @Operation(summary = "Get stats")
     public ResponseEntity<Stats> getStats() {
         int totalRequests = statsService.getTotalRequests();

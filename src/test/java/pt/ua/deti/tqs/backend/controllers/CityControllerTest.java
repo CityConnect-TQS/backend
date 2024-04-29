@@ -9,6 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.controllers.backoffice.CityController;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.services.CityService;
 
