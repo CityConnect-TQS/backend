@@ -153,7 +153,7 @@ class UserControllerTest {
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
 
-        when(service.updateUser(Mockito.any(User.class))).then(returnsFirstArg());
+        when(service.updateUser(Mockito.any(Long.class), Mockito.any(User.class))).then(returnsFirstArg());
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
                           .when().put("/api/public/user/1")
@@ -163,7 +163,7 @@ class UserControllerTest {
                           .body("email", is("johndoe@ua.pt"))
                           .body("username", is("johndoe"));
 
-        verify(service, times(1)).updateUser(Mockito.any(User.class));
+        verify(service, times(1)).updateUser(Mockito.any(Long.class), Mockito.any(User.class));
     }
 
     @Test
