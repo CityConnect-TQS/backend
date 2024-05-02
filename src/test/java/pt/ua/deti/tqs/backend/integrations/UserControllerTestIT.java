@@ -14,6 +14,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.entities.*;
 import pt.ua.deti.tqs.backend.repositories.*;
 
@@ -75,12 +76,13 @@ class UserControllerTestIT {
     }
 
     @Test
-    void whenValidInput_thenCreateUser() {
+    void whenValidInput_thenCreateNormalUser() {
         User user = new User();
         user.setUsername("johndoe");
         user.setPassword("password");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
+        user.setRoles(List.of(UserRole.USER));
 
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"username\":\"johndoe\",\"password\":\"password\",\"name\":\"John Doe\",\"email\":\"johndoe@ua.pt\"}")
@@ -88,7 +90,34 @@ class UserControllerTestIT {
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("username", equalTo(user.getUsername()))
                    .body("name", equalTo(user.getName()))
-                   .body("email", equalTo(user.getEmail()));
+                   .body("email", equalTo(user.getEmail()))
+                   .body("roles", hasSize(1))
+                   .body("roles[0]", is(UserRole.USER.toString()));
+
+        List<User> found = repository.findAll();
+        assertThat(found).extracting(User::getUsername).containsOnly(user.getUsername());
+        assertThat(found).extracting(User::getName).containsOnly(user.getName());
+        assertThat(found).extracting(User::getEmail).containsOnly(user.getEmail());
+    }
+
+    @Test
+    void whenValidInput_thenCreateUser() {
+        User user = new User();
+        user.setUsername("johndoe");
+        user.setPassword("password");
+        user.setName("John Doe");
+        user.setEmail("johndoe@ua.pt");
+        user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
+
+        RestAssured.given().contentType(ContentType.JSON)
+                   .body("{\"username\":\"johndoe\",\"password\":\"password\",\"name\":\"John Doe\",\"email\":\"johndoe@ua.pt\",\"roles\":[\"USER\",\"STAFF\"]}")
+                   .when().post(BASE_URL + "/api/backoffice/user")
+                   .then().statusCode(HttpStatus.CREATED.value())
+                   .body("username", equalTo(user.getUsername()))
+                   .body("name", equalTo(user.getName()))
+                   .body("email", equalTo(user.getEmail()))
+                   .body("roles", hasSize(2))
+                   .body("roles", hasItems(UserRole.USER.toString(), UserRole.STAFF.toString()));
 
         List<User> found = repository.findAll();
         assertThat(found).extracting(User::getUsername).containsOnly(user.getUsername());
@@ -98,7 +127,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserById_thenStatus200() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
+        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password", List.of(UserRole.USER));
 
         RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value())
@@ -115,7 +144,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserByValidEmailAndPassword_thenGetUser() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
+        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password", List.of(UserRole.USER));
 
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password\"}")
@@ -128,7 +157,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserByInvalidEmailAndPassword_thenGetNull() {
-        createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
+        createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password", List.of(UserRole.USER));
 
         RestAssured.given().contentType(ContentType.JSON)
                    .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password123\"}")
@@ -138,7 +167,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserReservationsByUserId_thenStatus200() {
-        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password");
+        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password", List.of(UserRole.USER));
         Reservation reservation = createTestReservation(user);
 
         RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations")
@@ -149,7 +178,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserReservationsByUserIdAndCurrencyEur_thenStatus200() {
-        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password");
+        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password", List.of(UserRole.USER));
         Reservation reservation = createTestReservation(user);
 
         RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=EUR")
@@ -161,7 +190,7 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserReservationsByUserIdAndCurrencyUsd_thenStatus200() {
-        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password");
+        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "janedoe", "password", List.of(UserRole.USER));
         Reservation reservation = createTestReservation(user);
 
         RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=USD")
@@ -173,12 +202,13 @@ class UserControllerTestIT {
 
     @Test
     void whenUpdateUser_thenStatus200() {
-        User user = createTestUser("John Doe", "joghndoe@ua.pt", "johndoe", "password");
+        User user = createTestUser("John Doe", "joghndoe@ua.pt", "johndoe", "password",
+                                   List.of(UserRole.USER, UserRole.STAFF));
 
         user.setName("Jane Doe");
         RestAssured.given().contentType(ContentType.JSON)
-                   .body("{\"name\":\"Jane Doe\", \"email\":\"johndoe@ua.pt\", \"username\":\"johndoe\", \"password\":\"password\"}")
-                   .when().put(BASE_URL + "/api/public/user/" + user.getId())
+                   .body("{\"name\":\"Jane Doe\", \"email\":\"johndoe@ua.pt\", \"username\":\"johndoe\", \"password\":\"password\", \"roles\":[\"USER\",\"STAFF\"]}")
+                   .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(user.getName()));
 
         User updated = repository.findById(user.getId()).orElse(null);
@@ -186,8 +216,23 @@ class UserControllerTestIT {
     }
 
     @Test
-    void whenUpdateInvalidUser_thenStatus404() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
+    void whenUpdateNormalUser_thenStatus200() {
+        User user = createTestUser("John Doe", "joghndoe@ua.pt", "johndoe", "password",
+                                   List.of(UserRole.USER));
+
+        user.setName("Jane Doe");
+        RestAssured.given().contentType(ContentType.JSON)
+                   .body("{\"name\":\"Jane Doe\", \"email\":\"johndoe@ua.pt\", \"username\":\"johndoe\", \"password\":\"password\"}")
+                   .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
+                   .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(user.getName()));
+
+        User updated = repository.findById(user.getId()).orElse(null);
+        assertThat(updated).isNotNull().extracting(User::getName).isEqualTo(user.getName());
+    }
+
+    @Test
+    void whenUpdateInvalidNormalUser_thenStatus404() {
+        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password", List.of(UserRole.USER));
 
         RestAssured.given().contentType(ContentType.JSON).body(user)
                    .when().put(BASE_URL + "/api/public/user/999")
@@ -195,8 +240,17 @@ class UserControllerTestIT {
     }
 
     @Test
+    void whenUpdateInvalidUser_thenStatus404() {
+        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password", List.of(UserRole.USER));
+
+        RestAssured.given().contentType(ContentType.JSON).body(user)
+                   .when().put(BASE_URL + "/api/backoffice/user/999")
+                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+    }
+
+    @Test
     void whenDeleteUser_thenStatus200() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password");
+        User user = createTestUser("John Doe", "johndoe@ua.pt", "johndoe", "password", List.of(UserRole.USER));
 
         RestAssured.when().delete(BASE_URL + "/api/public/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value());
@@ -204,12 +258,13 @@ class UserControllerTestIT {
         assertThat(repository.findById(user.getId())).isEmpty();
     }
 
-    private User createTestUser(String name, String email, String username, String password) {
+    private User createTestUser(String name, String email, String username, String password, List<UserRole> roles) {
         User user = new User();
         user.setName(name);
         user.setEmail(email);
         user.setUsername(username);
         user.setPassword(password);
+        user.setRoles(roles);
         return repository.saveAndFlush(user);
     }
 
