@@ -3,8 +3,10 @@ package pt.ua.deti.tqs.backend.entities;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
+import pt.ua.deti.tqs.backend.constants.UserRole;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -29,6 +31,11 @@ public class User {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
+
+    @ElementCollection(targetClass = UserRole.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "role", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(nullable = false)
+    private List<UserRole> roles;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
