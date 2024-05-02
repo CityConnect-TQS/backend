@@ -17,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/backoffice/trip")
+@CrossOrigin("*")
 @Tag(name = "Trip")
 @AllArgsConstructor
 public class TripBackofficeController {
