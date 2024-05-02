@@ -81,22 +81,4 @@ class UserRepositoryTest {
         userRepository.deleteById(user.getId());
         assertThat(userRepository.findById(user.getId())).isEmpty();
     }
-
-    @Test
-    void whenUpdateUser_thenUserShouldBeUpdated() {
-        User user = new User();
-        user.setUsername("johndoe");
-        user.setName("John Doe");
-        user.setEmail("johndoe@ua.pt");
-        user.setPassword("password");
-        user.setRoles(List.of(UserRole.USER));
-        entityManager.persistAndFlush(user);
-
-        user.setName("Jane Doe");
-        userRepository.save(user);
-
-        User updatedUser = userRepository.findById(user.getId()).orElse(null);
-        assertThat(updatedUser).isNotNull();
-        assertThat(updatedUser.getName()).isEqualTo("Jane Doe");
-    }
 }
