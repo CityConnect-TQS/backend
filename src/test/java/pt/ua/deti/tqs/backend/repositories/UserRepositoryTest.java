@@ -4,7 +4,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.entities.User;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,6 +26,7 @@ class UserRepositoryTest {
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER));
         entityManager.persistAndFlush(user);
 
         User found = userRepository.findById(user.getId()).orElse(null);
@@ -42,16 +46,19 @@ class UserRepositoryTest {
         user1.setName("John Doe");
         user1.setEmail("johndoe@ua.pt");
         user1.setPassword("password");
+        user1.setRoles(List.of(UserRole.USER));
         User user2 = new User();
         user2.setUsername("janedoe");
         user2.setName("Jane Doe");
         user2.setEmail("janedoe@ua.pt");
         user2.setPassword("password");
+        user2.setRoles(List.of(UserRole.USER, UserRole.STAFF));
         User user3 = new User();
         user3.setUsername("johndoe2");
         user3.setName("John Doe");
         user3.setEmail("johndoe2@ua.pt");
         user3.setPassword("password");
+        user3.setRoles(List.of(UserRole.USER, UserRole.STAFF, UserRole.ADMIN));
 
         entityManager.persist(user1);
         entityManager.persist(user2);
@@ -68,6 +75,7 @@ class UserRepositoryTest {
         user.setName("John Doe");
         user.setEmail("joghndoe@ua.pt");
         user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER));
         entityManager.persistAndFlush(user);
 
         userRepository.deleteById(user.getId());
@@ -81,6 +89,7 @@ class UserRepositoryTest {
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER));
         entityManager.persistAndFlush(user);
 
         user.setName("Jane Doe");
