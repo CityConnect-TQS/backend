@@ -8,6 +8,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.constants.UserRole;
+import pt.ua.deti.tqs.backend.controllers.backoffice.UserBackofficeController;
+import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.services.ReservationService;
@@ -17,10 +20,10 @@ import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.Mockito.*;
 
-@WebMvcTest(UserController.class)
+@WebMvcTest({UserController.class, UserBackofficeController.class})
 class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -32,6 +35,33 @@ class UserControllerTest {
     private ReservationService reservationService;
 
     @Test
+    void whenPostNormalUser_thenCreateUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("johndoe");
+        user.setName("John Doe");
+        user.setEmail("johndoe@ua.pt");
+        user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER));
+
+        NormalUserDto normalUserDto = new NormalUserDto("johndoe", "John Doe", "johndoe@ua.pt", "password");
+
+        when(service.createNormalUser(Mockito.any(NormalUserDto.class))).thenReturn(user);
+
+        RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(normalUserDto)
+                          .when().post("/api/public/user")
+                          .then().statusCode(201)
+                          .body("id", is(1))
+                          .body("name", is(user.getName()))
+                          .body("email", is(user.getEmail()))
+                          .body("username", is(user.getUsername()))
+                          .body("roles", hasSize(1))
+                          .body("roles[0]", is(UserRole.USER.toString()));
+
+        verify(service, times(1)).createNormalUser(Mockito.any(NormalUserDto.class));
+    }
+
+    @Test
     void whenPostUser_thenCreateUser() {
         User user = new User();
         user.setId(1L);
@@ -39,18 +69,22 @@ class UserControllerTest {
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
 
-        when(service.createUser(Mockito.any())).thenReturn(user);
+        when(service.createUser(Mockito.any(User.class))).thenReturn(user);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
-                          .when().post("/api/public/user")
+                          .when().post("/api/backoffice/user")
                           .then().statusCode(201)
                           .body("id", is(1))
                           .body("name", is("John Doe"))
                           .body("email", is("johndoe@ua.pt"))
-                          .body("username", is("johndoe"));
+                          .body("username", is("johndoe"))
+                          .body("roles", hasSize(2))
+                          .body("roles[0]", is(UserRole.USER.toString()))
+                          .body("roles[1]", is(UserRole.STAFF.toString()));
 
-        verify(service, times(1)).createUser(Mockito.any());
+        verify(service, times(1)).createUser(Mockito.any(User.class));
     }
 
     @Test
@@ -145,6 +179,33 @@ class UserControllerTest {
     }
 
     @Test
+    void whenUpdateNormalUser_thenUpdateUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("johndoe");
+        user.setName("John Doe");
+        user.setEmail("johndoe@ua.pt");
+        user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER));
+
+        NormalUserDto normalUserDto = new NormalUserDto("johndoe", "John Doe", "johndoe@ua.pt", "password");
+
+        when(service.updateNormalUser(Mockito.any(Long.class), Mockito.any(NormalUserDto.class))).thenReturn(user);
+
+        RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(normalUserDto)
+                          .when().put("/api/public/user/1")
+                          .then().statusCode(200)
+                          .body("id", is(1))
+                          .body("name", is(user.getName()))
+                          .body("email", is(user.getEmail()))
+                          .body("username", is(user.getUsername()))
+                          .body("roles", hasSize(1))
+                          .body("roles[0]", is(UserRole.USER.toString()));
+
+        verify(service, times(1)).updateNormalUser(Mockito.any(Long.class), Mockito.any(NormalUserDto.class));
+    }
+
+    @Test
     void whenUpdateUser_thenUpdateUser() {
         User user = new User();
         user.setId(1L);
@@ -152,16 +213,20 @@ class UserControllerTest {
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
+        user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
 
-        when(service.updateUser(Mockito.any(Long.class), Mockito.any(User.class))).then(returnsFirstArg());
+        when(service.updateUser(Mockito.any(Long.class), Mockito.any(User.class))).then(returnsSecondArg());
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
-                          .when().put("/api/public/user/1")
+                          .when().put("/api/backoffice/user/1")
                           .then().statusCode(200)
                           .body("id", is(1))
                           .body("name", is("John Doe"))
                           .body("email", is("johndoe@ua.pt"))
-                          .body("username", is("johndoe"));
+                          .body("username", is("johndoe"))
+                          .body("roles", hasSize(2))
+                          .body("roles[0]", is(UserRole.USER.toString()))
+                          .body("roles[1]", is(UserRole.STAFF.toString()));
 
         verify(service, times(1)).updateUser(Mockito.any(Long.class), Mockito.any(User.class));
     }
