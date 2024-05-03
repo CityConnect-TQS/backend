@@ -64,7 +64,7 @@ class BusControllerTest {
         when(service.getAllBuses()).thenReturn(Arrays.asList(bus1, bus2, bus3));
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/backoffice/bus")
+                          .when().get("/api/public/bus")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("$", hasSize(3))
                           .body("[0].capacity", is(50))
@@ -87,7 +87,7 @@ class BusControllerTest {
         when(service.getBus(1L)).thenReturn(bus);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/backoffice/bus/1")
+                          .when().get("/api/public/bus/1")
                           .then().statusCode(HttpStatus.OK.value())
                           .body("capacity", is(50))
                           .body("company", is("Flexibus"));
@@ -100,7 +100,7 @@ class BusControllerTest {
         when(service.getBus(1L)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
-                          .when().get("/api/backoffice/bus/1")
+                          .when().get("/api/public/bus/1")
                           .then().statusCode(HttpStatus.NOT_FOUND.value());
 
         verify(service, times(1)).getBus(1L);
