@@ -21,6 +21,7 @@ class BusRepositoryTest {
     void whenFindBusById_thenReturnBus() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         entityManager.persistAndFlush(bus);
 
         Bus found = busRepository.findById(bus.getId()).orElse(null);
@@ -37,10 +38,13 @@ class BusRepositoryTest {
     void whenFindAllBuses_thenReturnAllBuses() {
         Bus bus1 = new Bus();
         bus1.setCapacity(50);
+        bus1.setCompany("Flexibus");
         Bus bus2 = new Bus();
         bus2.setCapacity(100);
+        bus2.setCompany("Transdev");
         Bus bus3 = new Bus();
         bus3.setCapacity(50);
+        bus3.setCompany("Flexibus");
 
         entityManager.persist(bus1);
         entityManager.persist(bus2);
@@ -54,6 +58,7 @@ class BusRepositoryTest {
     void whenDeleteBusById_thenBusShouldNotExist() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         entityManager.persistAndFlush(bus);
 
         busRepository.deleteById(bus.getId());
@@ -65,6 +70,7 @@ class BusRepositoryTest {
     void whenUpdateBus_thenBusShouldBeUpdated() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         entityManager.persistAndFlush(bus);
 
         bus.setCapacity(100);

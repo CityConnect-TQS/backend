@@ -60,11 +60,13 @@ class BusControllerTestIT {
     void whenValidInput_thenCreateBus() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         RestAssured.given().contentType(ContentType.JSON).body(bus)
                    .when().post(BASE_URL + "/api/backoffice/bus")
                    .then().statusCode(HttpStatus.CREATED.value())
-                   .body("capacity", equalTo(bus.getCapacity()));
+                   .body("capacity", equalTo(bus.getCapacity()))
+                   .body("company", equalTo(bus.getCompany()));
 
         List<Bus> found = repository.findAll();
         assertThat(found).extracting(Bus::getCapacity).containsOnly(bus.getCapacity());
@@ -72,22 +74,24 @@ class BusControllerTestIT {
 
     @Test
     void givenBuses_whenGetBuses_thenStatus200() {
-        Bus bus1 = createTestBus(50);
-        Bus bus2 = createTestBus(60);
+        Bus bus1 = createTestBus(50, "Flexibus");
+        Bus bus2 = createTestBus(60, "Transdev");
 
         RestAssured.when().get(BASE_URL + "/api/backoffice/bus")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
-                   .body("capacity", hasItems(bus1.getCapacity(), bus2.getCapacity()));
+                   .body("capacity", hasItems(bus1.getCapacity(), bus2.getCapacity()))
+                   .body("company", hasItems(bus1.getCompany(), bus2.getCompany()));
     }
 
     @Test
     void whenGetBusById_thenStatus200() {
-        Bus bus = createTestBus(50);
+        Bus bus = createTestBus(50, "Flexibus");
 
         RestAssured.when().get(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value())
-                   .body("capacity", equalTo(bus.getCapacity()));
+                   .body("capacity", equalTo(bus.getCapacity()))
+                   .body("company", equalTo(bus.getCompany()));
     }
 
     @Test
@@ -98,13 +102,14 @@ class BusControllerTestIT {
 
     @Test
     void whenUpdateBus_thenStatus200() {
-        Bus bus = createTestBus(50);
+        Bus bus = createTestBus(50, "Flexibus");
 
         bus.setCapacity(60);
         RestAssured.given().contentType(ContentType.JSON).body(bus)
                    .when().put(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value())
-                   .body("capacity", equalTo(bus.getCapacity()));
+                   .body("capacity", equalTo(bus.getCapacity()))
+                   .body("company", equalTo(bus.getCompany()));
 
         Bus updatedBus = repository.findById(bus.getId()).orElse(null);
         assertThat(updatedBus).isNotNull().extracting(Bus::getCapacity).isEqualTo(60);
@@ -112,7 +117,7 @@ class BusControllerTestIT {
 
     @Test
     void whenUpdateInvalidBus_thenStatus404() {
-        Bus bus = createTestBus(50);
+        Bus bus = createTestBus(50, "Flexibus");
 
         RestAssured.given().contentType(ContentType.JSON).body(bus)
                    .when().put(BASE_URL + "/api/backoffice/bus/999")
@@ -121,7 +126,7 @@ class BusControllerTestIT {
 
     @Test
     void whenDeleteBus_thenStatus200() {
-        Bus bus = createTestBus(50);
+        Bus bus = createTestBus(50, "Flexibus");
 
         RestAssured.when().delete(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value());
@@ -129,9 +134,10 @@ class BusControllerTestIT {
         assertThat(repository.findById(bus.getId())).isEmpty();
     }
 
-    private Bus createTestBus(int capacity) {
+    private Bus createTestBus(int capacity, String company) {
         Bus bus = new Bus();
         bus.setCapacity(capacity);
+        bus.setCompany(company);
         repository.saveAndFlush(bus);
         return bus;
     }

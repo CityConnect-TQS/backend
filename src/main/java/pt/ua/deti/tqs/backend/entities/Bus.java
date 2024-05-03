@@ -20,6 +20,9 @@ public class Bus {
     @Column(nullable = false)
     private Integer capacity;
 
+    @Column(nullable = false)
+    private String company;
+
     @OneToMany(mappedBy = "bus")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Setter(AccessLevel.NONE)
