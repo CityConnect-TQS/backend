@@ -53,7 +53,11 @@ public class AuthConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+        http.csrf(httpSecurityCsrfConfigurer ->
+                          httpSecurityCsrfConfigurer.ignoringRequestMatchers("/api/public/user/login",
+                                                                             "/api/public/user",
+                                                                             "/api/backoffice/user"))
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(
                     auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/login").permitAll()
