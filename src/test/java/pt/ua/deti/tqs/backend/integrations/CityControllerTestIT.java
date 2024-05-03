@@ -75,7 +75,7 @@ class CityControllerTestIT {
         City city = createTestCity("Aveiro");
         City city2 = createTestCity("Porto");
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/city")
+        RestAssured.when().get(BASE_URL + "/api/public/city")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("name", hasItems(city.getName(), city2.getName()));
@@ -85,7 +85,7 @@ class CityControllerTestIT {
     void whenGetCityById_thenStatus200() {
         City city = createTestCity("Aveiro");
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/city/" + city.getId())
+        RestAssured.when().get(BASE_URL + "/api/public/city/" + city.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("name", equalTo(city.getName()));
     }
@@ -95,7 +95,7 @@ class CityControllerTestIT {
         City city = createTestCity("Aveiro");
         createTestCity("Porto");
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/city?name=" + city.getName())
+        RestAssured.when().get(BASE_URL + "/api/public/city?name=" + city.getName())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("name", hasItems(city.getName()));
@@ -103,13 +103,13 @@ class CityControllerTestIT {
 
     @Test
     void whenGetCityByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/backoffice/city/999")
+        RestAssured.when().get(BASE_URL + "/api/public/city/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     @Test
     void whenGetCityByInvalidName_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/backoffice/city?name=aaaa")
+        RestAssured.when().get(BASE_URL + "/api/public/city?name=aaaa")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(0));
     }
