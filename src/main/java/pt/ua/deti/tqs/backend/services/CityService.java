@@ -38,6 +38,8 @@ public class CityService {
 
         City existing = existingOpt.get();
         existing.setName(city.getName());
+        existing.setLatitude(city.getLatitude());
+        existing.setLongitude(city.getLongitude());
         return cityRepository.save(existing);
     }
 
