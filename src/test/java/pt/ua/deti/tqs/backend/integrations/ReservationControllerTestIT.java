@@ -78,6 +78,7 @@ class ReservationControllerTestIT {
     void whenValidInput_thenCreateReservation() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         bus = busRepository.saveAndFlush(bus);
 
         City city = new City();
@@ -124,6 +125,7 @@ class ReservationControllerTestIT {
     void whenValidInputAndSeatsGreaterThanCapacity_thenBadRequest() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         bus = busRepository.saveAndFlush(bus);
 
         City city = new City();
@@ -289,6 +291,7 @@ class ReservationControllerTestIT {
     private Reservation createTestReservation() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         bus = busRepository.saveAndFlush(bus);
 
         City city = new City();

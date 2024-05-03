@@ -73,6 +73,7 @@ class TripControllerTestIT {
     void whenValidInput_thenCreateTrip() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
         City city = new City();
@@ -398,6 +399,7 @@ class TripControllerTestIT {
     private Trip createTestTrip(String departure, String arrival) {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
         City city = new City();

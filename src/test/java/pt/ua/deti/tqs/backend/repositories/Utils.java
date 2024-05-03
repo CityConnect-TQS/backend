@@ -9,6 +9,7 @@ public class Utils {
     public static Bus generateBus(TestEntityManager entityManager) {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
         entityManager.persistAndFlush(bus);
         return bus;
     }
