@@ -76,6 +76,7 @@ class TripServiceTest {
         Mockito.when(tripRepository.findById(12345L)).thenReturn(Optional.empty());
         Mockito.when(tripRepository.findById(trip1.getId())).thenReturn(Optional.of(trip1));
         Mockito.when(tripRepository.findAll(Mockito.any(Specification.class))).thenReturn(List.of(trip1, trip2, trip3));
+        Mockito.when(tripRepository.findAll()).thenReturn(List.of(trip1, trip2, trip3));
         Mockito.when(tripRepository.save(trip1)).thenReturn(trip1);
         Mockito.when(currencyService.convertEurToCurrency(10, Currency.USD)).thenReturn(11.0);
     }
@@ -116,6 +117,12 @@ class TripServiceTest {
 
         assertThat(allTrips).isNotNull().hasSize(3);
         assertThat(allTrips).extracting(Trip::getPrice).containsOnly(11.0);
+    }
+
+    @Test
+    void whenFindAllTripsOnBackoffice_thenReturnAllTrips() {
+        List<Trip> allTrips = tripService.getAllTrips();
+        assertThat(allTrips).isNotNull().hasSize(3);
     }
 
     @Test
