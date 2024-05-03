@@ -54,6 +54,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
         trip.setId(1L);
@@ -71,6 +72,7 @@ class TripControllerTest {
                           .then().statusCode(201)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
+                          .body("bus.company", is(trip.getBus().getCompany()))
                           .body("departure.name", is(trip.getDeparture().getName()))
                           .body("departureTime", is(trip.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
                           .body("arrival.name", is(trip.getArrival().getName()))
@@ -92,6 +94,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip1 = new Trip();
         trip1.setId(1L);
@@ -118,6 +121,7 @@ class TripControllerTest {
                           .then().statusCode(200)
                           .body("[0].price", is((float) trip1.getPrice()))
                           .body("[0].bus.capacity", is(trip1.getBus().getCapacity()))
+                          .body("[0].bus.company", is(trip1.getBus().getCompany()))
                           .body("[0].departure.name", is(trip1.getDeparture().getName()))
                           .body("[0].departureTime",
                                 is(trip1.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
@@ -125,6 +129,7 @@ class TripControllerTest {
                           .body("[0].arrivalTime", is(trip1.getArrivalTime().format(DateTimeFormatter.ISO_DATE_TIME)))
                           .body("[1].price", is((float) trip2.getPrice()))
                           .body("[1].bus.capacity", is(trip2.getBus().getCapacity()))
+                          .body("[1].bus.company", is(trip2.getBus().getCompany()))
                           .body("[1].departure.name", is(trip2.getDeparture().getName()))
                           .body("[1].departureTime",
                                 is(trip2.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME))
@@ -146,6 +151,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip1 = new Trip();
         trip1.setId(1L);
@@ -173,6 +179,7 @@ class TripControllerTest {
                           .then().statusCode(200)
                           .body("[0].price", is((float) trip1.getPrice()))
                           .body("[0].bus.capacity", is(trip1.getBus().getCapacity()))
+                          .body("[0].bus.company", is(trip1.getBus().getCompany()))
                           .body("[0].departure.name", is(trip1.getDeparture().getName()))
                           .body("[0].departureTime",
                                 is(trip1.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
@@ -193,6 +200,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
         trip.setId(1L);
@@ -210,6 +218,7 @@ class TripControllerTest {
                           .then().statusCode(200)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
+                          .body("bus.company", is(trip.getBus().getCompany()))
                           .body("departure.name", is(trip.getDeparture().getName()))
                           .body("departureTime", is(trip.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
                           .body("arrival.name", is(trip.getArrival().getName()))
@@ -231,6 +240,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
         trip.setId(1L);
@@ -248,6 +258,7 @@ class TripControllerTest {
                           .then().statusCode(200)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
+                          .body("bus.company", is(trip.getBus().getCompany()))
                           .body("departure.name", is(trip.getDeparture().getName()))
                           .body("departureTime", is(trip.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
                           .body("arrival.name", is(trip.getArrival().getName()))
@@ -280,6 +291,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
         trip.setId(1L);
@@ -319,6 +331,7 @@ class TripControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
         trip.setId(1L);
@@ -336,6 +349,7 @@ class TripControllerTest {
                           .then().statusCode(200)
                           .body("price", is((float) trip.getPrice()))
                           .body("bus.capacity", is(trip.getBus().getCapacity()))
+                          .body("bus.company", is(trip.getBus().getCompany()))
                           .body("departure.name", is(trip.getDeparture().getName()))
                           .body("departureTime", is(trip.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
                           .body("arrival.name", is(trip.getArrival().getName()))

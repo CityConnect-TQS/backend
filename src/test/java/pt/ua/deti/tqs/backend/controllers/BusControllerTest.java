@@ -33,13 +33,15 @@ class BusControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         when(service.createBus(Mockito.any())).thenReturn(bus);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(ContentType.JSON).body(bus)
                           .when().post("/api/backoffice/bus")
                           .then().statusCode(HttpStatus.CREATED.value())
-                          .body("capacity", is(50));
+                          .body("capacity", is(50))
+                          .body("company", is("Flexibus"));
 
         verify(service, times(1)).createBus(Mockito.any());
     }
@@ -49,12 +51,15 @@ class BusControllerTest {
         Bus bus1 = new Bus();
         bus1.setId(1L);
         bus1.setCapacity(50);
+        bus1.setCompany("Flexibus");
         Bus bus2 = new Bus();
         bus2.setId(2L);
         bus2.setCapacity(60);
+        bus2.setCompany("Transdev");
         Bus bus3 = new Bus();
         bus3.setId(3L);
         bus3.setCapacity(70);
+        bus3.setCompany("Flexibus");
 
         when(service.getAllBuses()).thenReturn(Arrays.asList(bus1, bus2, bus3));
 
@@ -64,7 +69,10 @@ class BusControllerTest {
                           .body("$", hasSize(3))
                           .body("[0].capacity", is(50))
                           .body("[1].capacity", is(60))
-                          .body("[2].capacity", is(70));
+                          .body("[2].capacity", is(70))
+                          .body("[0].company", is("Flexibus"))
+                          .body("[1].company", is("Transdev"))
+                          .body("[2].company", is("Flexibus"));
 
         verify(service, times(1)).getAllBuses();
     }
@@ -74,13 +82,15 @@ class BusControllerTest {
         Bus bus = new Bus();
         bus.setId(1L);
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         when(service.getBus(1L)).thenReturn(bus);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc)
                           .when().get("/api/backoffice/bus/1")
                           .then().statusCode(HttpStatus.OK.value())
-                          .body("capacity", is(50));
+                          .body("capacity", is(50))
+                          .body("company", is("Flexibus"));
 
         verify(service, times(1)).getBus(1L);
     }
@@ -100,13 +110,15 @@ class BusControllerTest {
     void whenUpdateBus_thenUpdateBus() {
         Bus bus = new Bus();
         bus.setCapacity(50);
+        bus.setCompany("Flexibus");
 
         when(service.updateBus(Mockito.any(Bus.class))).then(returnsFirstArg());
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(ContentType.JSON).body(bus)
                           .when().put("/api/backoffice/bus/1")
                           .then().statusCode(HttpStatus.OK.value())
-                          .body("capacity", is(50));
+                          .body("capacity", is(50))
+                          .body("company", is("Flexibus"));
 
         verify(service, times(1)).updateBus(Mockito.any(Bus.class));
     }
