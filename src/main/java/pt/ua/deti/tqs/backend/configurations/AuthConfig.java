@@ -14,14 +14,20 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pt.ua.deti.tqs.backend.components.AuthEntryPointJwt;
 import pt.ua.deti.tqs.backend.components.AuthTokenFilter;
 import pt.ua.deti.tqs.backend.services.UserService;
+
+import java.util.Arrays;
+
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
 @EnableWebSecurity
@@ -53,24 +59,22 @@ public class AuthConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(httpSecurityCsrfConfigurer ->
-                          httpSecurityCsrfConfigurer.ignoringRequestMatchers("/api/public/user/login",
-                                                                             "/api/public/user",
-                                                                             "/api/backoffice/user"))
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
             .authorizeHttpRequests(
                     auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/login").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/public/user").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/backoffice/user").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/backoffice/bus/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/backoffice/city/**").permitAll()
                                 .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers("/api/docs/**").permitAll()
                                 .requestMatchers("/api/docs-config/**").permitAll()
-                                .anyRequest().authenticated());
-
-        http.authenticationProvider(authenticationProvider());
-
-        http.addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
+                                .anyRequest().authenticated())
+            .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -90,5 +94,19 @@ public class AuthConfig {
                             .info(new Info().title("CityConnect API")
                                             .description("Every API endpoint used in the app.")
                                             .version("1.0"));
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("http://staff.localhost");
+        configuration.addAllowedOrigin("http://digital.localhost");
+        configuration.addAllowedOrigin("http://localhost");
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
