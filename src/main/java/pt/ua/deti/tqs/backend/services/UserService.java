@@ -39,7 +39,6 @@ public class UserService {
         }
 
         User existing = existingOpt.get();
-        existing.setUsername(user.getUsername());
         existing.setName(user.getName());
         existing.setEmail(user.getEmail());
         existing.setPassword(user.getPassword());
@@ -57,7 +56,6 @@ public class UserService {
 
     private User convertToNormalUser(NormalUserDto userDTO) {
         User user = new User();
-        user.setUsername(userDTO.getUsername());
         user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());
         user.setPassword(userDTO.getPassword());

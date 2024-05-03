@@ -38,13 +38,12 @@ class UserControllerTest {
     void whenPostNormalUser_thenCreateUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
         user.setRoles(List.of(UserRole.USER));
 
-        NormalUserDto normalUserDto = new NormalUserDto("johndoe", "John Doe", "johndoe@ua.pt", "password");
+        NormalUserDto normalUserDto = new NormalUserDto("John Doe", "johndoe@ua.pt", "password");
 
         when(service.createNormalUser(Mockito.any(NormalUserDto.class))).thenReturn(user);
 
@@ -54,7 +53,6 @@ class UserControllerTest {
                           .body("id", is(1))
                           .body("name", is(user.getName()))
                           .body("email", is(user.getEmail()))
-                          .body("username", is(user.getUsername()))
                           .body("roles", hasSize(1))
                           .body("roles[0]", is(UserRole.USER.toString()));
 
@@ -65,7 +63,6 @@ class UserControllerTest {
     void whenPostUser_thenCreateUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
@@ -79,7 +76,6 @@ class UserControllerTest {
                           .body("id", is(1))
                           .body("name", is("John Doe"))
                           .body("email", is("johndoe@ua.pt"))
-                          .body("username", is("johndoe"))
                           .body("roles", hasSize(2))
                           .body("roles[0]", is(UserRole.USER.toString()))
                           .body("roles[1]", is(UserRole.STAFF.toString()));
@@ -91,7 +87,6 @@ class UserControllerTest {
     void whenGetUserById_thenGetUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
@@ -103,8 +98,7 @@ class UserControllerTest {
                           .then().statusCode(200)
                           .body("id", is(1))
                           .body("name", is("John Doe"))
-                          .body("email", is("johndoe@ua.pt"))
-                          .body("username", is("johndoe"));
+                          .body("email", is("johndoe@ua.pt"));
 
         verify(service, times(1)).getUser(1L);
     }
@@ -124,7 +118,6 @@ class UserControllerTest {
     void whenGetUserByValidEmailAndPassword_thenGetUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
@@ -137,8 +130,7 @@ class UserControllerTest {
                           .then().statusCode(200)
                           .body("id", is(1))
                           .body("name", is(user.getName()))
-                          .body("email", is(user.getEmail()))
-                          .body("username", is(user.getUsername()));
+                          .body("email", is(user.getEmail()));
     }
 
     @Test
@@ -158,7 +150,6 @@ class UserControllerTest {
     void whenGetUserReservationsByUserId_thenGetUserReservations() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johhdoe@ua.pt");
         user.setPassword("password");
@@ -182,13 +173,12 @@ class UserControllerTest {
     void whenUpdateNormalUser_thenUpdateUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
         user.setRoles(List.of(UserRole.USER));
 
-        NormalUserDto normalUserDto = new NormalUserDto("johndoe", "John Doe", "johndoe@ua.pt", "password");
+        NormalUserDto normalUserDto = new NormalUserDto("John Doe", "johndoe@ua.pt", "password");
 
         when(service.updateNormalUser(Mockito.any(Long.class), Mockito.any(NormalUserDto.class))).thenReturn(user);
 
@@ -198,7 +188,6 @@ class UserControllerTest {
                           .body("id", is(1))
                           .body("name", is(user.getName()))
                           .body("email", is(user.getEmail()))
-                          .body("username", is(user.getUsername()))
                           .body("roles", hasSize(1))
                           .body("roles[0]", is(UserRole.USER.toString()));
 
@@ -209,7 +198,6 @@ class UserControllerTest {
     void whenUpdateUser_thenUpdateUser() {
         User user = new User();
         user.setId(1L);
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
@@ -223,7 +211,6 @@ class UserControllerTest {
                           .body("id", is(1))
                           .body("name", is("John Doe"))
                           .body("email", is("johndoe@ua.pt"))
-                          .body("username", is("johndoe"))
                           .body("roles", hasSize(2))
                           .body("roles[0]", is(UserRole.USER.toString()))
                           .body("roles[1]", is(UserRole.STAFF.toString()));

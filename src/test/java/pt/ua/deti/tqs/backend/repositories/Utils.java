@@ -24,7 +24,6 @@ public class Utils {
         User user = new User();
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
-        user.setUsername("johndoe");
         user.setPassword("password");
         entityManager.persistAndFlush(user);
         return user;
