@@ -66,8 +66,8 @@ public class AuthConfig {
                     auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/login").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/public/user").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/backoffice/user").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/backoffice/bus/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/backoffice/city/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
                                 .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers("/api/docs/**").permitAll()
                                 .requestMatchers("/api/docs-config/**").permitAll()
@@ -87,8 +87,7 @@ public class AuthConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        return new OpenAPI().addSecurityItem(new SecurityRequirement().
-                                                     addList("Bearer Authentication"))
+        return new OpenAPI().addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                             .components(new Components().addSecuritySchemes
                                                                 ("Bearer Authentication", createAPIKeyScheme()))
                             .info(new Info().title("CityConnect API")
