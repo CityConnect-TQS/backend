@@ -24,6 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest({TripController.class, TripBackofficeController.class})
@@ -356,6 +357,48 @@ class TripControllerTest {
                           .body("arrivalTime", is(trip.getArrivalTime().format(DateTimeFormatter.ISO_DATE_TIME)));
 
         verify(service, times(1)).updateTrip(Mockito.any());
+    }
+
+    @Test
+    void whenFindAllTripsOnBackoffice_thenReturnAllTrips() throws Exception {
+        City city1 = new City();
+        city1.setId(1L);
+        city1.setName("Porto");
+
+        City city2 = new City();
+        city2.setId(2L);
+        city2.setName("Lisboa");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setCapacity(50);
+        bus.setCompany("Flexibus");
+
+        Trip trip1 = new Trip();
+        trip1.setId(1L);
+        trip1.setDeparture(city1);
+        trip1.setArrival(city2);
+        trip1.setDepartureTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        trip1.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
+        trip1.setBus(bus);
+        trip1.setPrice(10.0);
+
+        Trip trip2 = new Trip();
+        trip2.setId(2L);
+        trip2.setDeparture(city2);
+        trip2.setArrival(city1);
+        trip2.setDepartureTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        trip2.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
+        trip2.setBus(bus);
+        trip2.setPrice(10.0);
+
+        when(service.getAllTrips()).thenReturn(List.of(trip1, trip2));
+
+
+        RestAssuredMockMvc.given().mockMvc(mvc)
+                          .when().get("/api/backoffice/trip")
+                          .then().statusCode(200)
+                          .body("$", hasSize(2));
     }
 
     @Test

@@ -392,6 +392,17 @@ class TripControllerTestIT {
         assertThat(repository.findById(trip.getId())).isEmpty();
     }
 
+    @Test
+    void whenGetAllTripsOnBackoffice_thenStatus200() {
+        createTestTrip();
+        createTestTrip();
+        createTestTrip();
+
+        RestAssured.when().get(BASE_URL + "/api/backoffice/trip")
+                   .then().statusCode(HttpStatus.OK.value())
+                   .body("", hasSize(3));
+    }
+
     private Trip createTestTrip() {
         return createTestTrip("Aveiro", "Aveiro");
     }
