@@ -48,6 +48,10 @@ public class JwtUtils {
         return getClaimsFromJwtToken(token).getSubject();
     }
 
+    public Date getExpirationFromJwtToken(String token) {
+        return getClaimsFromJwtToken(token).getExpiration();
+    }
+
     public boolean validateJwtToken(String authToken) {
         try {
             this.getJwtParser().parse(authToken);
