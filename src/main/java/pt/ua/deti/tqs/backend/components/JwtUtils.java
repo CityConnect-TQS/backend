@@ -12,6 +12,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Date;
@@ -27,9 +28,8 @@ public class JwtUtils {
                     @Value("${cityconnect.app.jwtPrivateKey}") String privateKeyString,
                     @Value("${cityconnect.app.jwtExpirationMs}") int jwtExpirationMs) throws GeneralSecurityException {
         KeyFactory kf = KeyFactory.getInstance("RSA");
-
         this.publicKey = kf.generatePublic(getEncodedKeySpec(publicKeyString));
-        this.privateKey = kf.generatePrivate(getEncodedKeySpec(privateKeyString));
+        this.privateKey = kf.generatePrivate(getEncodedPrivateKeySpec(privateKeyString));
         this.jwtExpirationMs = jwtExpirationMs;
     }
 
@@ -66,8 +66,13 @@ public class JwtUtils {
     }
 
     private X509EncodedKeySpec getEncodedKeySpec(String key) {
-        byte[] byteKey = Base64.getDecoder().decode(key.getBytes());
+        byte[] byteKey = Base64.getMimeDecoder().decode(key.getBytes());
         return new X509EncodedKeySpec(byteKey);
+    }
+
+    private PKCS8EncodedKeySpec getEncodedPrivateKeySpec(String key) {
+        byte[] byteKey = Base64.getMimeDecoder().decode(key.getBytes());
+        return new PKCS8EncodedKeySpec(byteKey);
     }
 
     private JwtParser getJwtParser() {
