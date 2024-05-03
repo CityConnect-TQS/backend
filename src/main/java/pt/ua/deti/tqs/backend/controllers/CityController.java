@@ -1,4 +1,4 @@
-package pt.ua.deti.tqs.backend.controllers.backoffice;
+package pt.ua.deti.tqs.backend.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,18 +14,12 @@ import pt.ua.deti.tqs.backend.services.CityService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/backoffice/city")
+@RequestMapping("api/public/city")
 @Tag(name = "City")
 @AllArgsConstructor
 public class CityController {
+
     private final CityService cityService;
-
-    @PostMapping
-    @Operation(summary = "Create a new city")
-    public ResponseEntity<City> createCity(@RequestBody City city) {
-        return new ResponseEntity<>(cityService.createCity(city), HttpStatus.CREATED);
-    }
-
     @GetMapping
     @Operation(summary = "Get cities")
     public ResponseEntity<List<City>> getCities(
@@ -44,22 +38,5 @@ public class CityController {
         City city = cityService.getCity(id);
         HttpStatus status = city != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(city, status);
-    }
-
-    @PutMapping("{id}")
-    @Operation(summary = "Update a city")
-    public ResponseEntity<City> updateCity(
-            @PathVariable("id") @Parameter(name = "City ID", example = "1") Long id, @RequestBody City city) {
-        city.setId(id);
-        City updated = cityService.updateCity(city);
-        HttpStatus status = updated != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
-        return new ResponseEntity<>(updated, status);
-    }
-
-    @DeleteMapping("{id}")
-    @Operation(summary = "Delete a city")
-    public ResponseEntity<Void> deleteCity(@PathVariable("id") @Parameter(name = "City ID", example = "1") Long id) {
-        cityService.deleteCity(id);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

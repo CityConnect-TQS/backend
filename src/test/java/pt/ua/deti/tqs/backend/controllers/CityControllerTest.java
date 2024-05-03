@@ -9,7 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import pt.ua.deti.tqs.backend.controllers.backoffice.CityController;
+import pt.ua.deti.tqs.backend.controllers.backoffice.CityBackofficeController;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.services.CityService;
 
@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Mockito.*;
 
-@WebMvcTest(CityController.class)
+@WebMvcTest({CityBackofficeController.class, CityController.class})
 class CityControllerTest {
     @Autowired
     private MockMvc mockMvc;
