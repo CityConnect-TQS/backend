@@ -9,7 +9,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
-import pt.ua.deti.tqs.backend.controllers.backoffice.BusController;
+import pt.ua.deti.tqs.backend.controllers.backoffice.BusBackofficeController;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.services.BusService;
 
@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Mockito.*;
 
-@WebMvcTest(BusController.class)
+@WebMvcTest({BusBackofficeController.class, BusController.class})
 class BusControllerTest {
     @Autowired
     private MockMvc mockMvc;

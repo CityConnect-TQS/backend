@@ -55,6 +55,10 @@ public class TripService {
         return all;
     }
 
+    public List<Trip> getAllTrips() {
+        return tripRepository.findAll();
+    }
+
     public Trip getTrip(Long id, Currency currency) {
         Trip trip = tripRepository.findById(id).orElse(null);
 
