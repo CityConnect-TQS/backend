@@ -5,9 +5,9 @@ VALUES (1, 50, 'Flix Bus'),
        (3, 20, 'Transdev'),
        (4, 40, 'Rede Expressos'),
        (5, 20, 'Flix Bus');
-       
 
-INSERT INTO public.city (id, name)
+
+INSERT INTO public.city (id, name, latitude, longitude)
 VALUES (1, 'Murtosa', 40.7608, -8.6375),
        (2, 'Estarreja', 40.7583, -8.5725),
        (3, 'Aveiro', 40.6401, -8.6538),
