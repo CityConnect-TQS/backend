@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.helpers.Currency;
@@ -24,9 +25,9 @@ public class UserController {
     private final ReservationService reservationService;
 
     @PostMapping
-    @Operation(summary = "Create a new user")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return new ResponseEntity<>(userService.createUser(user), HttpStatus.CREATED);
+    @Operation(summary = "Create a new normal user")
+    public ResponseEntity<User> createUser(@RequestBody NormalUserDto user) {
+        return new ResponseEntity<>(userService.createNormalUser(user), HttpStatus.CREATED);
     }
 
     @GetMapping("{id}")
@@ -54,11 +55,10 @@ public class UserController {
     }
 
     @PutMapping("{id}")
-    @Operation(summary = "Update a user")
+    @Operation(summary = "Update a normal user")
     public ResponseEntity<User> updateUser(
-            @PathVariable("id") @Parameter(name = "User ID", example = "1") Long id, @RequestBody User user) {
-        user.setId(id);
-        User updated = userService.updateUser(user);
+            @PathVariable("id") @Parameter(name = "User ID", example = "1") Long id, @RequestBody NormalUserDto user) {
+        User updated = userService.updateNormalUser(id, user);
         HttpStatus status = updated != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(updated, status);
     }
