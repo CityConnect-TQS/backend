@@ -21,8 +21,8 @@ public class City {
     private String name;
 
     @Column
-    private double latitude;
+    private Double latitude;
 
     @Column
-    private double longitude;
+    private Double longitude;
 }
