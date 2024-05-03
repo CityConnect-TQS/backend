@@ -1,6 +1,9 @@
 package pt.ua.deti.tqs.backend.services;
 
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
@@ -12,7 +15,7 @@ import java.util.Optional;
 
 @Service
 @AllArgsConstructor
-public class UserService {
+public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
 
     public User createUser(User user) {
@@ -25,10 +28,6 @@ public class UserService {
 
     public User getUser(Long id) {
         return userRepository.findById(id).orElse(null);
-    }
-
-    public User loginUser(String email, String password) {
-        return userRepository.findUserByEmailAndPassword(email, password);
     }
 
     public User updateUser(Long id, User user) {
@@ -52,6 +51,11 @@ public class UserService {
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return userRepository.findUserByEmail(email);
     }
 
     private User convertToNormalUser(NormalUserDto userDTO) {

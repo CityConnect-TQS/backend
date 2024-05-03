@@ -38,14 +38,6 @@ public class UserController {
         return new ResponseEntity<>(user, status);
     }
 
-    @PostMapping("/login")
-    @Operation(summary = "Login a user")
-    public ResponseEntity<User> getUser(@RequestBody User user) {
-        User found = userService.loginUser(user.getEmail(), user.getPassword());
-        HttpStatus status = found != null ? HttpStatus.OK : HttpStatus.UNAUTHORIZED;
-        return new ResponseEntity<>(found, status);
-    }
-
     @GetMapping("{id}/reservations")
     @Operation(summary = "Get all reservations of a user")
     public ResponseEntity<List<Reservation>> getReservationsByUserId(
