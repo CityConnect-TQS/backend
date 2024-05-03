@@ -8,10 +8,10 @@ VALUES (1, 50, 'Flix Bus'),
        
 
 INSERT INTO public.city (id, name)
-VALUES (1, 'Murtosa'),
-       (2, 'Estarreja'),
-       (3, 'Aveiro'),
-       (4, 'Ovar');
+VALUES (1, 'Murtosa', 40.7608, -8.6375),
+       (2, 'Estarreja', 40.7583, -8.5725),
+       (3, 'Aveiro', 40.6401, -8.6538),
+       (4, 'Ovar', 40.8636, -8.6281);
 
 INSERT INTO public.trip (id, arrival_time, departure_time, free_seats, price, arrival_id, bus_id, departure_id)
 VALUES (1, '2024-04-08 08:00:00', '2024-04-08 06:00:00', 50, 10.00, 3, 1, 1),
