@@ -88,7 +88,14 @@ public class ReservationService {
     }
 
     public void deleteReservationById(Long id) {
+        Reservation reservation = reservationRepository.findById(id).orElse(null);
+
+        if (reservation == null) {
+            return;
+        }
+
         Trip trip = reservationRepository.findById(id).map(Reservation::getTrip).orElse(null);
+        reservation.getUser().getReservations().remove(reservation);
         reservationRepository.deleteById(id);
 
         if (trip != null) {
