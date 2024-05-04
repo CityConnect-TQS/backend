@@ -37,7 +37,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private List<UserRole> roles;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Setter(AccessLevel.NONE)
     private Collection<Reservation> reservations;

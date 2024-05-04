@@ -10,10 +10,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -22,9 +24,11 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pt.ua.deti.tqs.backend.components.AuthEntryPointJwt;
 import pt.ua.deti.tqs.backend.components.AuthTokenFilter;
+import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 @Configuration
 @EnableWebSecurity
@@ -55,6 +59,18 @@ public class AuthConfig {
                     auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/backoffice/user/**").permitAll()
 
+                                .requestMatchers("/api/public/user/{id}/**")
+                                .access((authentication, context) -> new AuthorizationDecision(
+                                        checkUserId(authentication, context.getVariables().get("id"))))
+
+                                .requestMatchers("/api/backoffice/user/{id}/**")
+                                .access((authentication, context) -> new AuthorizationDecision(
+                                        checkUserId(authentication, context.getVariables().get("id"))))
+
+                                .requestMatchers("/api/public/reservation/{id}/**")
+                                .access((authentication, context) -> new AuthorizationDecision(
+                                        checkReservationId(authentication, context.getVariables().get("id"))))
+
                                 .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/public/trip/**").permitAll()
@@ -70,6 +86,15 @@ public class AuthConfig {
             .addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private boolean checkUserId(Supplier<Authentication> authentication, String id) {
+        return ((User) authentication.get().getPrincipal()).getId().equals(Long.parseLong(id));
+    }
+
+    private boolean checkReservationId(Supplier<Authentication> authentication, String id) {
+        return ((User) authentication.get().getPrincipal()).getReservations().stream().anyMatch(
+                reservation -> reservation.getId().equals(Long.parseLong(id)));
     }
 
     private SecurityScheme createAPIKeyScheme() {
