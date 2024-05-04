@@ -86,7 +86,6 @@ class ReservationControllerTestIT {
         city = cityRepository.saveAndFlush(city);
 
         User user = new User();
-        user.setUsername("user");
         user.setEmail("user@ua.pt");
         user.setName("User");
         user.setPassword("password");
@@ -113,7 +112,6 @@ class ReservationControllerTestIT {
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
-                   .body("user.username", equalTo(reservation.getUser().getUsername()))
                    .body("trip.price", equalTo((float) reservation.getTrip().getPrice()))
                    .body("trip.departure.name", equalTo(reservation.getTrip().getDeparture().getName()))
                    .body("trip.arrival.name", equalTo(reservation.getTrip().getArrival().getName()))
@@ -135,7 +133,6 @@ class ReservationControllerTestIT {
         city = cityRepository.saveAndFlush(city);
 
         User user = new User();
-        user.setUsername("user");
         user.setEmail("user@ua.pt");
         user.setName("User");
         user.setPassword("password");
@@ -172,8 +169,6 @@ class ReservationControllerTestIT {
                    .body("", hasSize(2))
                    .body("price", hasItems((float) reservation1.getPrice(), (float) reservation2.getPrice()))
                    .body("seats", hasItems(reservation1.getSeats(), reservation2.getSeats()))
-                   .body("user.username",
-                         hasItems(reservation1.getUser().getUsername(), reservation2.getUser().getUsername()))
                    .body("trip.price",
                          hasItems((float) reservation1.getTrip().getPrice(), (float) reservation2.getTrip().getPrice()))
                    .body("trip.departure.name", hasItems(reservation1.getTrip().getDeparture().getName(),
@@ -197,7 +192,6 @@ class ReservationControllerTestIT {
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
-                   .body("user.username", equalTo(reservation.getUser().getUsername()))
                    .body("trip.price", equalTo((float) reservation.getTrip().getPrice()))
                    .body("trip.departure.name", equalTo(reservation.getTrip().getDeparture().getName()))
                    .body("trip.arrival.name", equalTo(reservation.getTrip().getArrival().getName()))
@@ -215,7 +209,6 @@ class ReservationControllerTestIT {
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
-                   .body("user.username", equalTo(reservation.getUser().getUsername()))
                    .body("trip.price", equalTo((float) reservation.getTrip().getPrice()))
                    .body("trip.departure.name", equalTo(reservation.getTrip().getDeparture().getName()))
                    .body("trip.arrival.name", equalTo(reservation.getTrip().getArrival().getName()))
@@ -233,7 +226,6 @@ class ReservationControllerTestIT {
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", not(equalTo((float) reservation.getPrice())))
                    .body("seats", equalTo(reservation.getSeats()))
-                   .body("user.username", equalTo(reservation.getUser().getUsername()))
                    .body("trip.price", not(equalTo((float) reservation.getTrip().getPrice())))
                    .body("trip.departure.name", equalTo(reservation.getTrip().getDeparture().getName()))
                    .body("trip.arrival.name", equalTo(reservation.getTrip().getArrival().getName()))
@@ -309,7 +301,6 @@ class ReservationControllerTestIT {
         User user = new User();
         user.setEmail("user@ua.pt");
         user.setName("User");
-        user.setUsername("user");
         user.setPassword("password");
         user = userRepository.saveAndFlush(user);
 
