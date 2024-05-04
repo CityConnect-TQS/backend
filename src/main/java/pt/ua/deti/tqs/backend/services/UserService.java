@@ -29,12 +29,19 @@ public class UserService implements UserDetailsService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
-    public User createUser(User user) {
+    public LoginResponse createUser(User user) {
+        if (userRepository.findUserByEmail(user.getEmail()) != null) {
+            return null;
+        }
+        
+        String unencryptedPassword = user.getPassword();
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+        userRepository.save(user);
+
+        return this.loginUser(new LoginRequest(user.getEmail(), unencryptedPassword));
     }
 
-    public User createNormalUser(NormalUserDto user) {
+    public LoginResponse createNormalUser(NormalUserDto user) {
         return createUser(convertToNormalUser(user));
     }
 

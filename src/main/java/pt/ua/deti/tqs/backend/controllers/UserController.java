@@ -33,10 +33,19 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "Create a new normal user")
-    public ResponseEntity<User> createUser(@RequestBody NormalUserDto user) {
-        return new ResponseEntity<>(userService.createNormalUser(user), HttpStatus.CREATED);
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User info & token",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponse.class))}),
+            @ApiResponse(responseCode = "400", description = "User already exists",
+                    content = @Content)})
+    public ResponseEntity<LoginResponse> createUser(@RequestBody NormalUserDto user) {
+        LoginResponse response = userService.createNormalUser(user);
+        HttpStatus status = response != null ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(response, status);
     }
 
+    @PostMapping("/login")
     @Operation(summary = "Login a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User info & token",
@@ -44,7 +53,6 @@ public class UserController {
                             schema = @Schema(implementation = LoginResponse.class))}),
             @ApiResponse(responseCode = "401", description = "User not found",
                     content = @Content)})
-    @PostMapping("/login")
     public ResponseEntity<LoginResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
         LoginResponse response = userService.loginUser(loginRequest);
         HttpStatus status = response != null ? HttpStatus.OK : HttpStatus.UNAUTHORIZED;
