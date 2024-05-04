@@ -52,14 +52,19 @@ public class AuthConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(
-                    auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/login").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/public/user").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/backoffice/user").permitAll()
+                    auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/backoffice/user/**").permitAll()
+
                                 .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
+                                .requestMatchers(HttpMethod.GET, "/api/public/trip/**").permitAll()
+
                                 .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers("/api/docs/**").permitAll()
                                 .requestMatchers("/api/docs-config/**").permitAll()
+
+                                .requestMatchers("/api/public/**").hasRole("USER")
+                                .requestMatchers("/api/backoffice/**").hasAnyRole("STAFF", "ADMIN")
                                 .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
