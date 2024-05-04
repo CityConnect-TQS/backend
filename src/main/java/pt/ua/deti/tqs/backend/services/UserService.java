@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
@@ -17,8 +18,10 @@ import java.util.Optional;
 @AllArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private PasswordEncoder passwordEncoder;
 
     public User createUser(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
@@ -28,6 +31,10 @@ public class UserService implements UserDetailsService {
 
     public User getUser(Long id) {
         return userRepository.findById(id).orElse(null);
+    }
+
+    public User getUserByEmail(String email) {
+        return userRepository.findUserByEmail(email);
     }
 
     public User updateUser(Long id, User user) {
@@ -40,7 +47,7 @@ public class UserService implements UserDetailsService {
         User existing = existingOpt.get();
         existing.setName(user.getName());
         existing.setEmail(user.getEmail());
-        existing.setPassword(user.getPassword());
+        existing.setPassword(passwordEncoder.encode(user.getPassword()));
         existing.setRoles(user.getRoles());
         return userRepository.save(existing);
     }
@@ -55,7 +62,7 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findUserByEmail(email);
+        return getUserByEmail(email);
     }
 
     private User convertToNormalUser(NormalUserDto userDTO) {
