@@ -94,12 +94,12 @@ class UserServiceTest {
     @Test
     void whenUpdateNormalUser_thenUserShouldBeUpdated() {
         NormalUserDto user = new NormalUserDto("John", "john@ua.pt", "john123");
-        User updated = userService.updateNormalUser(1L, user);
+        LoginResponse updated = userService.updateNormalUser(1L, user);
 
         assertThat(updated).isNotNull();
         assertThat(updated.getName()).isEqualTo(user.getName());
         assertThat(updated.getEmail()).isEqualTo(user.getEmail());
-        assertThat(updated.getPassword()).isEqualTo(user.getPassword());
+        // assertThat(updated.getPassword()).isEqualTo(user.getPassword());
         assertThat(updated.getRoles()).isEqualTo(List.of(UserRole.USER));
     }
 
@@ -111,12 +111,12 @@ class UserServiceTest {
         user.setPassword("john123");
         user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
 
-        User updated = userService.updateUser(1L, user);
+        LoginResponse updated = userService.updateUser(1L, user);
 
         assertThat(updated).isNotNull();
         assertThat(updated.getName()).isEqualTo(user.getName());
         assertThat(updated.getEmail()).isEqualTo(user.getEmail());
-        assertThat(updated.getPassword()).isEqualTo(user.getPassword());
+        // assertThat(updated.getPassword()).isEqualTo(user.getPassword());
         assertThat(updated.getRoles()).isEqualTo(user.getRoles());
     }
 

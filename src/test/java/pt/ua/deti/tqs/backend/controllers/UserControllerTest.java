@@ -189,8 +189,11 @@ class UserControllerTest {
         user.setRoles(List.of(UserRole.USER));
 
         NormalUserDto normalUserDto = new NormalUserDto("John Doe", "johndoe@ua.pt", "password");
+        LoginResponse loginResponse = new LoginResponse(user.getId(), user.getName(), user.getEmail(),
+                                                        user.getRoles(), "token", 123456789L);
 
-        when(service.updateNormalUser(Mockito.any(Long.class), Mockito.any(NormalUserDto.class))).thenReturn(user);
+        when(service.updateNormalUser(Mockito.any(Long.class), Mockito.any(NormalUserDto.class))).thenReturn(
+                loginResponse);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(normalUserDto)
                           .when().put("/api/public/user/1")
