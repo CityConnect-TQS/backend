@@ -15,6 +15,7 @@ import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -81,7 +82,7 @@ public class UserService {
         existing.setName(user.getName());
         existing.setEmail(user.getEmail());
         existing.setPassword(passwordEncoder.encode(user.getPassword()));
-        existing.setRoles(user.getRoles());
+        existing.setRoles(new ArrayList<>(user.getRoles()));
         return userRepository.save(existing);
     }
 
