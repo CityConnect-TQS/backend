@@ -2,11 +2,23 @@ package pt.ua.deti.tqs.backend.controllers;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
+import pt.ua.deti.tqs.backend.dtos.LoginRequest;
+import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.User;
@@ -23,11 +35,44 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final ReservationService reservationService;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
     @PostMapping
     @Operation(summary = "Create a new normal user")
     public ResponseEntity<User> createUser(@RequestBody NormalUserDto user) {
         return new ResponseEntity<>(userService.createNormalUser(user), HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "Login a user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User info & token",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponse.class))}),
+            @ApiResponse(responseCode = "401", description = "User not found",
+                    content = @Content)})
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> authenticateClient(@Valid @RequestBody LoginRequest loginRequest) {
+        User user = userService.getUserByEmail(loginRequest.getEmail());
+
+        if (user == null) {
+            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+        }
+
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+        Long expires = jwtUtils.getExpirationFromJwtToken(jwt).getTime();
+
+        User userDetails = (User) authentication.getPrincipal();
+
+        return new ResponseEntity<>(
+                new LoginResponse(userDetails.getId(), userDetails.getName(), userDetails.getEmail(),
+                                  userDetails.getRoles(), jwt, expires),
+                HttpStatus.OK
+        );
     }
 
     @GetMapping("{id}")
