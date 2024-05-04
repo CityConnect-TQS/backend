@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.controllers.backoffice.UserBackofficeController;
+import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.User;
@@ -46,7 +47,10 @@ class UserControllerTest {
 
         NormalUserDto normalUserDto = new NormalUserDto("John Doe", "johndoe@ua.pt", "password");
 
-        when(service.createNormalUser(Mockito.any(NormalUserDto.class))).thenReturn(user);
+        LoginResponse loginResponse = new LoginResponse(user.getId(), user.getName(), user.getEmail(),
+                                                        user.getRoles(), "token", 123456789L);
+
+        when(service.createNormalUser(Mockito.any(NormalUserDto.class))).thenReturn(loginResponse);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(normalUserDto)
                           .when().post("/api/public/user")
@@ -69,7 +73,10 @@ class UserControllerTest {
         user.setPassword("password");
         user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
 
-        when(service.createUser(Mockito.any(User.class))).thenReturn(user);
+        LoginResponse loginResponse = new LoginResponse(user.getId(), user.getName(), user.getEmail(),
+                                                        user.getRoles(), "token", 123456789L);
+
+        when(service.createUser(Mockito.any(User.class))).thenReturn(loginResponse);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
                           .when().post("/api/backoffice/user")
