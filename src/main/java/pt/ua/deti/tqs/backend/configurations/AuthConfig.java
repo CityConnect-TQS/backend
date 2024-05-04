@@ -63,8 +63,8 @@ public class AuthConfig {
                                 .requestMatchers("/api/docs/**").permitAll()
                                 .requestMatchers("/api/docs-config/**").permitAll()
 
-                                .requestMatchers("/api/public/**").hasRole("USER")
-                                .requestMatchers("/api/backoffice/**").hasAnyRole("STAFF", "ADMIN")
+                                .requestMatchers("/api/public/**").hasAuthority("USER")
+                                .requestMatchers("/api/backoffice/**").hasAnyAuthority("STAFF", "ADMIN")
                                 .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
