@@ -11,12 +11,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.dtos.LoginRequest;
 import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
@@ -35,8 +30,6 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final ReservationService reservationService;
-    private final AuthenticationManager authenticationManager;
-    private final JwtUtils jwtUtils;
 
     @PostMapping
     @Operation(summary = "Create a new normal user")
@@ -52,27 +45,10 @@ public class UserController {
             @ApiResponse(responseCode = "401", description = "User not found",
                     content = @Content)})
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticateClient(@Valid @RequestBody LoginRequest loginRequest) {
-        User user = userService.getUserByEmail(loginRequest.getEmail());
-
-        if (user == null) {
-            return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
-        }
-
-        Authentication authentication = authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
-        Long expires = jwtUtils.getExpirationFromJwtToken(jwt).getTime();
-
-        User userDetails = (User) authentication.getPrincipal();
-
-        return new ResponseEntity<>(
-                new LoginResponse(userDetails.getId(), userDetails.getName(), userDetails.getEmail(),
-                                  userDetails.getRoles(), jwt, expires),
-                HttpStatus.OK
-        );
+    public ResponseEntity<LoginResponse> loginUser(@Valid @RequestBody LoginRequest loginRequest) {
+        LoginResponse response = userService.loginUser(loginRequest);
+        HttpStatus status = response != null ? HttpStatus.OK : HttpStatus.UNAUTHORIZED;
+        return new ResponseEntity<>(response, status);
     }
 
     @GetMapping("{id}")

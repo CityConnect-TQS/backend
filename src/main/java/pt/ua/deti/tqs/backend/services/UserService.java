@@ -1,12 +1,19 @@
 package pt.ua.deti.tqs.backend.services;
 
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.constants.UserRole;
+import pt.ua.deti.tqs.backend.dtos.LoginRequest;
+import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.repositories.UserRepository;
@@ -18,7 +25,9 @@ import java.util.Optional;
 @AllArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
     public User createUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -35,6 +44,26 @@ public class UserService implements UserDetailsService {
 
     public User getUserByEmail(String email) {
         return userRepository.findUserByEmail(email);
+    }
+
+    public LoginResponse loginUser(LoginRequest loginRequest) {
+        User user = this.getUserByEmail(loginRequest.getEmail());
+
+        if (user == null) {
+            return null;
+        }
+
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+        Long expires = jwtUtils.getExpirationFromJwtToken(jwt).getTime();
+
+        User userDetails = (User) authentication.getPrincipal();
+
+        return new LoginResponse(userDetails.getId(), userDetails.getName(), userDetails.getEmail(),
+                                 userDetails.getRoles(), jwt, expires);
     }
 
     public User updateUser(Long id, User user) {
