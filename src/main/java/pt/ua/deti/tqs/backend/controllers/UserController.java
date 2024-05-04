@@ -77,9 +77,15 @@ public class UserController {
 
     @PutMapping("{id}")
     @Operation(summary = "Update a normal user")
-    public ResponseEntity<User> updateUser(
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User info & token",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = LoginResponse.class))}),
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content)})
+    public ResponseEntity<LoginResponse> updateUser(
             @PathVariable("id") @Parameter(name = "User ID", example = "1") Long id, @RequestBody NormalUserDto user) {
-        User updated = userService.updateNormalUser(id, user);
+        LoginResponse updated = userService.updateNormalUser(id, user);
         HttpStatus status = updated != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(updated, status);
     }

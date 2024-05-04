@@ -71,7 +71,7 @@ public class UserService {
                                  userDetails.getRoles(), jwt, expires);
     }
 
-    public User updateUser(Long id, User user) {
+    public LoginResponse updateUser(Long id, User user) {
         Optional<User> existingOpt = userRepository.findById(id);
 
         if (existingOpt.isEmpty()) {
@@ -83,10 +83,11 @@ public class UserService {
         existing.setEmail(user.getEmail());
         existing.setPassword(passwordEncoder.encode(user.getPassword()));
         existing.setRoles(new ArrayList<>(user.getRoles()));
-        return userRepository.save(existing);
+        userRepository.save(existing);
+        return this.loginUser(new LoginRequest(user.getEmail(), user.getPassword()));
     }
 
-    public User updateNormalUser(Long id, NormalUserDto user) {
+    public LoginResponse updateNormalUser(Long id, NormalUserDto user) {
         return updateUser(id, convertToNormalUser(user));
     }
 
