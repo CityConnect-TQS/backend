@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import pt.ua.deti.tqs.backend.services.UserService;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
 import java.io.IOException;
 
@@ -23,7 +23,7 @@ import java.io.IOException;
 public class AuthTokenFilter extends OncePerRequestFilter {
     private static final Logger logging = LoggerFactory.getLogger(AuthTokenFilter.class);
     private JwtUtils jwtUtils;
-    private UserService userService;
+    private CustomUserDetailsService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

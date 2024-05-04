@@ -22,7 +22,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pt.ua.deti.tqs.backend.components.AuthEntryPointJwt;
 import pt.ua.deti.tqs.backend.components.AuthTokenFilter;
-import pt.ua.deti.tqs.backend.services.UserService;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
 import java.util.Arrays;
 
@@ -30,7 +30,7 @@ import java.util.Arrays;
 @EnableWebSecurity
 @AllArgsConstructor
 public class AuthConfig {
-    private UserService userService;
+    private CustomUserDetailsService userService;
     private AuthTokenFilter authenticationJwtTokenFilter;
     private AuthEntryPointJwt unauthorizedHandler;
     private PasswordEncoder passwordEncoder;

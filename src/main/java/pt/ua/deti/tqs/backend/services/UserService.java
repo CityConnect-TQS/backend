@@ -5,9 +5,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import pt.ua.deti.tqs.backend.components.JwtUtils;
@@ -23,7 +20,7 @@ import java.util.Optional;
 
 @Service
 @AllArgsConstructor
-public class UserService implements UserDetailsService {
+public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -33,7 +30,7 @@ public class UserService implements UserDetailsService {
         if (userRepository.findUserByEmail(user.getEmail()) != null) {
             return null;
         }
-        
+
         String unencryptedPassword = user.getPassword();
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
@@ -94,11 +91,6 @@ public class UserService implements UserDetailsService {
 
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return getUserByEmail(email);
     }
 
     private User convertToNormalUser(NormalUserDto userDTO) {
