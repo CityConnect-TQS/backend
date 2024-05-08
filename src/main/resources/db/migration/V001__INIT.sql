@@ -41,7 +41,7 @@ CREATE TABLE trip
     price          DOUBLE PRECISION,
     bus_id         BIGINT                                  NOT NULL,
     free_seats     INTEGER,
-    status         VARCHAR(255) DEFAULT 'ONTIME'        NOT NULL,
+    status         SMALLINT DEFAULT 0                      NOT NULL,
     CONSTRAINT pk_trip PRIMARY KEY (id)
 );
 
