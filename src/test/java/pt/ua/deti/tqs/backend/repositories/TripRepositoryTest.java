@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Trip;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
 
@@ -77,6 +78,26 @@ class TripRepositoryTest {
 
         Iterable<Trip> allTrips = tripRepository.findAll();
         assertThat(allTrips).hasSize(3).contains(trip1, trip2, trip3);
+    }
+
+    @Test
+    void whenCreatTrip_thenTripShouldBeCreated() {
+        City city = Utils.generateCity(entityManager);
+        Bus bus = Utils.generateBus(entityManager);
+
+        Trip trip = new Trip();
+        trip.setDeparture(city);
+        trip.setArrival(city);
+        trip.setBus(bus);
+        trip.setDepartureTime(LocalDateTime.now());
+        trip.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip.setPrice(50);
+        entityManager.persistAndFlush(trip);
+
+        assertThat(trip.getId()).isNotNull();
+        Trip found = tripRepository.findById(trip.getId()).orElse(null);
+        assertThat(found).isEqualTo(trip);
+        assertThat(found.getStatus()).isEqualTo(TripStatus.ONTIME);
     }
 
     @Test

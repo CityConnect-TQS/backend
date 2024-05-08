@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -66,4 +67,7 @@ public class Trip {
                                                                                          (acc, r) -> acc + r.getSeats(),
                                                                                          Integer::sum) : 0);
     }
+
+    @Column
+    private TripStatus status = TripStatus.ONTIME;
 }
