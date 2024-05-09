@@ -14,6 +14,7 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -149,5 +150,38 @@ class TripServiceTest {
         assertThat(updated.getDepartureTime()).isEqualTo(trip.getDepartureTime());
         assertThat(updated.getArrivalTime()).isEqualTo(trip.getArrivalTime());
         assertThat(updated.getPrice()).isEqualTo(trip.getPrice());
+    }
+
+    @Test
+    void whenUpdateTripStatus_thenReturnUpdatedTrip() {
+        Trip trip = new Trip();
+        trip.setId(1L);
+        trip.setStatus(TripStatus.DELAYED);
+        trip.setDelay(10);
+
+        Trip updated = tripService.updateTrip(trip);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getId()).isEqualTo(1L);
+        assertThat(updated.getDepartureTime()).isEqualTo(trip.getDepartureTime());
+        assertThat(updated.getArrivalTime()).isEqualTo(trip.getArrivalTime());
+        assertThat(updated.getStatus()).isEqualTo(TripStatus.DELAYED);
+        assertThat(updated.getDelay()).isEqualTo(10);
+    }
+
+    @Test
+    void whenBadUpdateTripStatus_thenReturnNotUpdatedDelay() {
+        Trip trip = new Trip();
+        trip.setId(1L);
+        trip.setDelay(10);
+
+        Trip updated = tripService.updateTrip(trip);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getId()).isEqualTo(1L);
+        assertThat(updated.getDepartureTime()).isEqualTo(trip.getDepartureTime());
+        assertThat(updated.getArrivalTime()).isEqualTo(trip.getArrivalTime());
+        assertThat(updated.getStatus()).isEqualTo(TripStatus.ONTIME);
+        assertThat(updated.getDelay()).isEqualTo(0);
     }
 }

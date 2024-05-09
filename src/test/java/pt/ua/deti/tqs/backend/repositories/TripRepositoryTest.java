@@ -98,6 +98,7 @@ class TripRepositoryTest {
         Trip found = tripRepository.findById(trip.getId()).orElse(null);
         assertThat(found).isEqualTo(trip);
         assertThat(found.getStatus()).isEqualTo(TripStatus.ONTIME);
+        assertThat(found.getDelay()).isEqualTo(0);
     }
 
     @Test

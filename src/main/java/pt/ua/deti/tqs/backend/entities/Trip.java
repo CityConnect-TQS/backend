@@ -68,6 +68,9 @@ public class Trip {
                                                                                          Integer::sum) : 0);
     }
 
-    @Column
+    @Column(nullable = false)
     private TripStatus status = TripStatus.ONTIME;
+
+    @Column
+    private Integer delay = 0;
 }

@@ -42,6 +42,7 @@ CREATE TABLE trip
     bus_id         BIGINT                                  NOT NULL,
     free_seats     INTEGER,
     status         SMALLINT DEFAULT 0                      NOT NULL,
+    delay          INTEGER DEFAULT 0,
     CONSTRAINT pk_trip PRIMARY KEY (id)
 );
 

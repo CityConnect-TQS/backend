@@ -10,6 +10,7 @@ import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParametersSpecification;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -81,6 +82,10 @@ public class TripService {
         existing.setDepartureTime(trip.getDepartureTime());
         existing.setArrivalTime(trip.getArrivalTime());
         existing.setPrice(trip.getPrice());
+        existing.setStatus(trip.getStatus());
+        if (trip.getStatus() == TripStatus.DELAYED) {
+            existing.setDelay(trip.getDelay());
+        }
 
         Trip save = tripRepository.save(existing);
         save.calculateFreeSeats();

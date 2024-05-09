@@ -37,9 +37,20 @@ public class TripStatusSchedulerService {
     }
 
     public void updateTripStatus(Trip trip) {
-        if (trip.getStatus() == TripStatus.ONTIME && 
-            ChronoUnit.MINUTES.between(LocalDateTime.now(), trip.getDepartureTime()) <= 9) { // means 10 minutes before departure, it rounds up the difference
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime departureTime = trip.getDepartureTime();
+        TripStatus status = trip.getStatus();
+        int delay = trip.getDelay();
+    
+        if ((status == TripStatus.ONTIME || status == TripStatus.DELAYED) &&
+            ChronoUnit.MINUTES.between(now, departureTime.plusMinutes(delay)) <= 9) { // means 10 minutes before departure, it rounds up the difference
             trip.setStatus(TripStatus.ONBOARDING);
+            tripService.updateTrip(trip);
+        } 
+        else if (status == TripStatus.ONBOARDING && 
+                (ChronoUnit.MINUTES.between(now, departureTime) <= 0 ||
+                (delay > 0 && ChronoUnit.MINUTES.between(now, departureTime.plusMinutes(delay)) <= 0))) {
+            trip.setStatus(TripStatus.DEPARTED);
             tripService.updateTrip(trip);
         }
     }

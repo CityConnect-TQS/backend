@@ -23,6 +23,14 @@ public class TripStatusSchedulerServiceTest {
     @InjectMocks
     private TripStatusSchedulerService tripSchedulerService;
 
+    private void verifyCalledOnce(Trip trip){
+        verify(tripService, Mockito.times(1)).updateTrip(trip);
+    }
+
+    private void verifyNotCalled(Trip trip){
+        verify(tripService, Mockito.times(0)).updateTrip(trip);
+    }
+
     @Test
     void givenOnTimeBus_whenOnBoardingTimeArrives_thenStatusChanges(){
 
@@ -33,7 +41,7 @@ public class TripStatusSchedulerServiceTest {
         tripSchedulerService.updateTripStatus(trip);
 
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ONBOARDING);
-        verify(tripService, Mockito.times(1)).updateTrip(trip);
+        verifyCalledOnce(trip);
     }
 
     @Test
@@ -46,7 +54,7 @@ public class TripStatusSchedulerServiceTest {
         tripSchedulerService.updateTripStatus(trip);
 
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ONBOARDING);
-        verify(tripService, Mockito.times(1)).updateTrip(trip);
+        verifyCalledOnce(trip);
     }
 
     @Test
@@ -59,7 +67,7 @@ public class TripStatusSchedulerServiceTest {
         tripSchedulerService.updateTripStatus(trip);
 
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ONTIME);
-        verify(tripService, Mockito.times(0)).updateTrip(trip);
+        verifyNotCalled(trip);
     }
 
     @Test
@@ -72,20 +80,65 @@ public class TripStatusSchedulerServiceTest {
         tripSchedulerService.updateTripStatus(trip);
 
         assertThat(trip.getStatus()).isEqualTo(TripStatus.ONTIME);
-        verify(tripService, Mockito.times(0)).updateTrip(trip);
+        verifyNotCalled(trip);
     }
 
     @Test
-    void givenOnTimeBus_whenNotOnBoardingTime_thenStatusDoesntChange3(){
+    void givenDelayedBus_whenOnBoardingTime_thenStatusChanges(){
+
+        Trip trip = new Trip();
+        trip.setId(5L);
+        trip.setDepartureTime(LocalDateTime.now());
+        trip.setDelay(5); 
+        trip.setStatus(TripStatus.DELAYED);
+
+        tripSchedulerService.updateTripStatus(trip);
+
+        assertThat(trip.getStatus()).isEqualTo(TripStatus.ONBOARDING);
+        verifyCalledOnce(trip);        
+    }
+
+    @Test
+    void givenDelayedBus_whenNotOnBoardingTime_thenStatusDoesntChange(){
 
         Trip trip = new Trip();
         trip.setId(5L);
         trip.setDepartureTime(LocalDateTime.now()); 
+        trip.setDelay(11);
         trip.setStatus(TripStatus.DELAYED);
 
         tripSchedulerService.updateTripStatus(trip);
 
         assertThat(trip.getStatus()).isEqualTo(TripStatus.DELAYED);
-        verify(tripService, Mockito.times(0)).updateTrip(trip);
+        verifyNotCalled(trip);
+    }
+
+    @Test
+    void givenOnBoardingBus_whenDepartureTime_thenStatusChanges(){
+
+        Trip trip = new Trip();
+        trip.setId(6L);
+        trip.setDepartureTime(LocalDateTime.now());
+        trip.setStatus(TripStatus.ONBOARDING);
+
+        tripSchedulerService.updateTripStatus(trip);
+
+        assertThat(trip.getStatus()).isEqualTo(TripStatus.DEPARTED);
+        verifyCalledOnce(trip);
+    }
+
+    @Test
+    void givenOnBoardingDelayedBus_whenDepartureTime_thenStatusChanges(){
+
+        Trip trip = new Trip();
+        trip.setId(7L);
+        trip.setDelay(5);
+        trip.setDepartureTime(LocalDateTime.now().minusMinutes(5));
+        trip.setStatus(TripStatus.ONBOARDING);
+
+        tripSchedulerService.updateTripStatus(trip);
+
+        assertThat(trip.getStatus()).isEqualTo(TripStatus.DEPARTED);
+        verifyCalledOnce(trip);
     }
 }
