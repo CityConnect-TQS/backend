@@ -11,6 +11,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -31,6 +32,9 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
+@TestPropertySource(properties = {
+        "trip.status.update.delay=10000" // Set the delay to 10000 milliseconds
+})
 class TripControllerTestIT {
     @Container
     public static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16")
@@ -128,7 +132,8 @@ class TripControllerTestIT {
                          hasItems(trip1.getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                                   trip2.getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                    .body("arrivalTime", hasItems(trip1.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                                                 trip2.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+                                                 trip2.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
+                   .body("status", hasItems("ONTIME", "ONTIME"));
     }
 
     @Test
@@ -401,6 +406,21 @@ class TripControllerTestIT {
         RestAssured.when().get(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(3));
+    }
+
+    @Test
+    void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTestTrip();
+
+        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                   .then().statusCode(HttpStatus.OK.value())
+                   .body("status", equalTo("ONTIME"));
+
+        Thread.sleep(10000);
+
+        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                   .then().statusCode(HttpStatus.OK.value())
+                   .body("status", equalTo("ONBOARDING"));
     }
 
     private Trip createTestTrip() {

@@ -21,7 +21,7 @@ public class TripStatusSchedulerService {
 
     private final TripService tripService;
 
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelayString = "${trip.status.update.delay}")
     @Transactional
     public void updateStatus() {
         try {
