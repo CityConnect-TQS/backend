@@ -48,3 +48,13 @@ jobs:
           SPRING_APPLICATION_JSON='{"currencyapi.apikey":"${CURRENCY_API_KEY}"}' \
           mvn -B verify failsafe:integration-test sonar:sonar \
           -Dsonar.projectKey=CityConnect-TQS_backend
+
+      - name: Publish results to Xray
+        uses: mikepenz/xray-action@{latest-release}
+        with:
+          username: ${{ secrets.XRAY_CLIENT_ID }}
+          password: ${{ secrets.XRAY_CLIENT_SECRET }}
+          testFormat: "junit"
+          testPaths: "**/{surefire-reports,failsafe-reports}/TEST-*.xml"
+          testExecKey: "CC-94"
+          projectKey: "CC"
