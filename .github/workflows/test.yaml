@@ -55,6 +55,6 @@ jobs:
           username: ${{ secrets.XRAY_CLIENT_ID }}
           password: ${{ secrets.XRAY_CLIENT_SECRET }}
           testFormat: "junit"
-          testPaths: "**/{surefire-reports,failsafe-reports}/TEST-*.xml"
+          testPaths: "**/surefire-reports/TEST-*.xml"
           testExecKey: "CC-94"
           projectKey: "CC"
