@@ -64,7 +64,7 @@ public class Trip {
     public void calculateFreeSeats() {
         this.freeSeats = bus.getCapacity() - (reservations != null ? reservations.stream()
                                                                                  .reduce(0,
-                                                                                         (acc, r) -> acc + r.getSeats(),
+                                                                                         (acc, r) -> acc + r.getSeats().size(),
                                                                                          Integer::sum) : 0);
     }
 

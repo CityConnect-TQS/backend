@@ -21,6 +21,7 @@ import pt.ua.deti.tqs.backend.services.TripService;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -306,14 +307,14 @@ class TripControllerTest {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
         reservation.setTrip(trip);
-        reservation.setSeats(1);
+        reservation.setSeats(Arrays.asList("1A"));
 
         when(reservationService.getReservationsByTripId(1L, null)).thenReturn(List.of(reservation));
 
         RestAssuredMockMvc.given().mockMvc(mvc)
                           .when().get("/api/backoffice/trip/1/reservations")
                           .then().statusCode(200)
-                          .body("[0].seats", is(1))
+                          .body("[0].seats", hasSize(1))
                           .body("[0].trip.id", is(1));
 
         verify(reservationService, times(1)).getReservationsByTripId(1L, null);
