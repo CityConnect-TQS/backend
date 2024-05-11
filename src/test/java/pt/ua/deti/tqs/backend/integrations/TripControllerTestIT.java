@@ -489,7 +489,7 @@ class TripControllerTestIT {
 
     private Trip createTestTrip(String departure, String arrival) {
         Bus bus = new Bus();
-        bus.setCapacity(50);
+        bus.setCapacity(48);
         bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
@@ -508,7 +508,7 @@ class TripControllerTestIT {
         trip.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
         trip.setBus(bus);
         trip.setPrice(10.0);
-        trip.setFreeSeats(50);
+        trip.setFreeSeats(48);
         return repository.saveAndFlush(trip);
     }
 }

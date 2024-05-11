@@ -1,10 +1,10 @@
 -- Insert default data
 INSERT INTO public.bus (id, capacity, company)
-VALUES (1, 34, 'Flix Bus'),
-       (2, 34, 'Renex'),
-       (3, 38, 'Transdev'),
-       (4, 42, 'Rede Expressos'),
-       (5, 43, 'Flix Bus');
+VALUES (1, 36, 'Flix Bus'),
+       (2, 36, 'Renex'),
+       (3, 40, 'Transdev'),
+       (4, 44, 'Rede Expressos'),
+       (5, 49, 'Flix Bus');
        
 
 INSERT INTO public.city (id, name, latitude, longitude)

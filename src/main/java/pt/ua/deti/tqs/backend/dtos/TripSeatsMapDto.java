@@ -23,6 +23,10 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.entities.Bus;
+import pt.ua.deti.tqs.backend.entities.City;
+
 @Slf4j
 @Getter
 @Setter
@@ -46,7 +50,7 @@ public class TripSeatsMapDto {
 
     private long id;
 
-    private long departureId;
+    private City departure;
 
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
@@ -54,7 +58,7 @@ public class TripSeatsMapDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime departureTime;
 
-    private long arrivalId;
+    private City arrival;
 
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
@@ -64,21 +68,27 @@ public class TripSeatsMapDto {
 
     private double price;
 
-    private long busId;
+    private Bus bus;
 
     private int freeSeats;
+
+    private TripStatus status;
+
+    private int delay;
 
     private List<SeatsMap> seatsMap = new ArrayList<SeatsMap>();
 
     public TripSeatsMapDto(Trip trip){
         this.id = trip.getId();
-        this.departureId = trip.getDeparture().getId();
+        this.departure = trip.getDeparture();
         this.departureTime = trip.getDepartureTime();
-        this.arrivalId = trip.getArrival().getId();
+        this.arrival = trip.getArrival();
         this.arrivalTime = trip.getArrivalTime();
         this.price = trip.getPrice();
-        this.busId = trip.getBus().getId();
+        this.bus = trip.getBus();
         this.freeSeats = trip.getFreeSeats();
+        this.status = trip.getStatus();
+        this.delay = trip.getDelay();
         
         int capacity = trip.getBus().getCapacity();
         int numRows = capacity / 4;

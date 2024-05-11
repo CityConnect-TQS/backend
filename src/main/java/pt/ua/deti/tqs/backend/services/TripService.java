@@ -73,8 +73,12 @@ public class TripService {
 
     public TripSeatsMapDto getTripWithSeatsMap(Long id, Currency currency) {
         Trip trip = getTrip(id, currency);
+        TripSeatsMapDto tripSeatsMapDto = null;
 
-        TripSeatsMapDto tripSeatsMapDto = new TripSeatsMapDto(trip);
+        if(trip != null) {
+            tripSeatsMapDto = new TripSeatsMapDto(trip);
+        }
+
         return tripSeatsMapDto;
     }
 
