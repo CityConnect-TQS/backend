@@ -27,16 +27,4 @@ public class ReservationBackofficeController {
     ) {
         return new ResponseEntity<>(reservationService.getAllReservations(currency), HttpStatus.OK);
     }
-
-    @PutMapping("{id}")
-    @Operation(summary = "Update a reservation")
-    public ResponseEntity<Reservation> updateReservation(
-            @PathVariable @Parameter(name = "Reservation ID", example = "1") Long id,
-            @RequestBody Reservation reservation,
-            @RequestParam(required = false) @Parameter(name = "Currency", example = "EUR") Currency currency) {
-        reservation.setId(id);
-        Reservation updated = reservationService.updateReservation(reservation, currency);
-        HttpStatus status = updated != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
-        return new ResponseEntity<>(updated, status);
-    }
 }

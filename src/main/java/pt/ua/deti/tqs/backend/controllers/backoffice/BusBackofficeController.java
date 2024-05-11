@@ -16,27 +16,13 @@ import java.util.List;
 @RequestMapping("api/backoffice/bus")
 @Tag(name = "Bus")
 @AllArgsConstructor
-public class BusController {
+public class BusBackofficeController {
     private final BusService busService;
 
     @PostMapping
     @Operation(summary = "Create a new bus")
     public ResponseEntity<Bus> createBus(@RequestBody Bus bus) {
         return new ResponseEntity<>(busService.createBus(bus), HttpStatus.CREATED);
-    }
-
-    @GetMapping
-    @Operation(summary = "Get all buses")
-    public ResponseEntity<List<Bus>> getBuses() {
-        return new ResponseEntity<>(busService.getAllBuses(), HttpStatus.OK);
-    }
-
-    @GetMapping("{id}")
-    @Operation(summary = "Get a bus")
-    public ResponseEntity<Bus> getBus(@PathVariable("id") @Parameter(name = "Bus ID", example = "1") Long id) {
-        Bus bus = busService.getBus(id);
-        HttpStatus status = bus != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
-        return new ResponseEntity<>(bus, status);
     }
 
     @PutMapping("{id}")

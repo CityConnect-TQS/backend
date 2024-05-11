@@ -19,4 +19,10 @@ public class City {
 
     @Column(nullable = false)
     private String name;
+
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
 }

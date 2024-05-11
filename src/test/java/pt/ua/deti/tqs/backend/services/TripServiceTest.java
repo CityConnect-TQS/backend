@@ -14,6 +14,8 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,7 +46,7 @@ class TripServiceTest {
 
         Bus bus = new Bus();
         bus.setId(1L);
-        bus.setCapacity(50);
+        bus.setCapacity(49);
 
         Trip trip1 = new Trip();
         trip1.setId(1L);
@@ -54,6 +56,7 @@ class TripServiceTest {
         trip1.setDeparture(city1);
         trip1.setArrival(city2);
         trip1.setBus(bus);
+        trip1.setFreeSeats(49);
 
         Trip trip2 = new Trip();
         trip2.setId(2L);
@@ -76,6 +79,7 @@ class TripServiceTest {
         Mockito.when(tripRepository.findById(12345L)).thenReturn(Optional.empty());
         Mockito.when(tripRepository.findById(trip1.getId())).thenReturn(Optional.of(trip1));
         Mockito.when(tripRepository.findAll(Mockito.any(Specification.class))).thenReturn(List.of(trip1, trip2, trip3));
+        Mockito.when(tripRepository.findAll()).thenReturn(List.of(trip1, trip2, trip3));
         Mockito.when(tripRepository.save(trip1)).thenReturn(trip1);
         Mockito.when(currencyService.convertEurToCurrency(10, Currency.USD)).thenReturn(11.0);
     }
@@ -86,6 +90,24 @@ class TripServiceTest {
 
         assertThat(found).isNotNull();
         assertThat(found.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void whenGetTripWithSeatsMap_thenTripSeatsMapDtoShouldBeFound() {
+        TripSeatsMapDto found = tripService.getTripWithSeatsMap(1L, null);
+
+        assertThat(found).isNotNull();
+        assertThat(found.getId()).isEqualTo(1L);
+        assertThat(found.getSeatsMap().size()).isEqualTo(5);
+        assertThat(found.getSeatsMap().get(0).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(1).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(2).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(3).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(4).getSeats().size()).isEqualTo(1);
+        assertThat(found.getSeatsMap().get(4).getId()).isEqualTo('C');
+        assertThat(found.getSeatsMap().get(0).getSeats().get(11).getId()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(0).getSeats().get(5).getId()).isEqualTo(6);
+        assertThat(found.getSeatsMap().get(0).getSeats().get(5).isAlreadyReserved()).isFalse();
     }
 
     @Test
@@ -119,6 +141,12 @@ class TripServiceTest {
     }
 
     @Test
+    void whenFindAllTripsOnBackoffice_thenReturnAllTrips() {
+        List<Trip> allTrips = tripService.getAllTrips();
+        assertThat(allTrips).isNotNull().hasSize(3);
+    }
+
+    @Test
     void whenFindAllTripsFromCity_thenReturnAllTripsFromCity() {
         TripSearchParameters params = new TripSearchParameters();
         params.setDeparture(1L);
@@ -142,5 +170,38 @@ class TripServiceTest {
         assertThat(updated.getDepartureTime()).isEqualTo(trip.getDepartureTime());
         assertThat(updated.getArrivalTime()).isEqualTo(trip.getArrivalTime());
         assertThat(updated.getPrice()).isEqualTo(trip.getPrice());
+    }
+
+    @Test
+    void whenUpdateTripStatus_thenReturnUpdatedTrip() {
+        Trip trip = new Trip();
+        trip.setId(1L);
+        trip.setStatus(TripStatus.DELAYED);
+        trip.setDelay(10);
+
+        Trip updated = tripService.updateTrip(trip);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getId()).isEqualTo(1L);
+        assertThat(updated.getDepartureTime()).isEqualTo(trip.getDepartureTime());
+        assertThat(updated.getArrivalTime()).isEqualTo(trip.getArrivalTime());
+        assertThat(updated.getStatus()).isEqualTo(TripStatus.DELAYED);
+        assertThat(updated.getDelay()).isEqualTo(10);
+    }
+
+    @Test
+    void whenBadUpdateTripStatus_thenReturnNotUpdatedDelay() {
+        Trip trip = new Trip();
+        trip.setId(1L);
+        trip.setDelay(10);
+
+        Trip updated = tripService.updateTrip(trip);
+
+        assertThat(updated).isNotNull();
+        assertThat(updated.getId()).isEqualTo(1L);
+        assertThat(updated.getDepartureTime()).isEqualTo(trip.getDepartureTime());
+        assertThat(updated.getArrivalTime()).isEqualTo(trip.getArrivalTime());
+        assertThat(updated.getStatus()).isEqualTo(TripStatus.ONTIME);
+        assertThat(updated.getDelay()).isEqualTo(0);
     }
 }

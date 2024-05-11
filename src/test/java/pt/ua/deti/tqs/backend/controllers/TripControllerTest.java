@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pt.ua.deti.tqs.backend.controllers.backoffice.TripBackofficeController;
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Reservation;
@@ -21,9 +22,11 @@ import pt.ua.deti.tqs.backend.services.TripService;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest({TripController.class, TripBackofficeController.class})
@@ -199,7 +202,7 @@ class TripControllerTest {
 
         Bus bus = new Bus();
         bus.setId(1L);
-        bus.setCapacity(50);
+        bus.setCapacity(48);
         bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
@@ -209,9 +212,12 @@ class TripControllerTest {
         trip.setDepartureTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
         trip.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
         trip.setBus(bus);
+        trip.setFreeSeats(48);
         trip.setPrice(10.0);
 
-        when(service.getTrip(1L, null)).thenReturn(trip);
+        TripSeatsMapDto tripSeatsMapDto = new TripSeatsMapDto(trip);
+
+        when(service.getTripWithSeatsMap(1L, null)).thenReturn(tripSeatsMapDto);
 
         RestAssuredMockMvc.given().mockMvc(mvc)
                           .when().get("/api/public/trip/1")
@@ -222,9 +228,10 @@ class TripControllerTest {
                           .body("departure.name", is(trip.getDeparture().getName()))
                           .body("departureTime", is(trip.getDepartureTime().format(DateTimeFormatter.ISO_DATE_TIME)))
                           .body("arrival.name", is(trip.getArrival().getName()))
-                          .body("arrivalTime", is(trip.getArrivalTime().format(DateTimeFormatter.ISO_DATE_TIME)));
+                          .body("arrivalTime", is(trip.getArrivalTime().format(DateTimeFormatter.ISO_DATE_TIME)))
+                          .body("seatsMap", hasSize(4));
 
-        verify(service, times(1)).getTrip(1L, null);
+        verify(service, times(1)).getTripWithSeatsMap(1L, null);
     }
 
     @Test
@@ -239,7 +246,7 @@ class TripControllerTest {
 
         Bus bus = new Bus();
         bus.setId(1L);
-        bus.setCapacity(50);
+        bus.setCapacity(48);
         bus.setCompany("Flexibus");
 
         Trip trip = new Trip();
@@ -250,8 +257,11 @@ class TripControllerTest {
         trip.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
         trip.setBus(bus);
         trip.setPrice(10.0);
+        trip.setFreeSeats(48);
 
-        when(service.getTrip(1L, Currency.USD)).thenReturn(trip);
+        TripSeatsMapDto tripSeatsMapDto = new TripSeatsMapDto(trip);
+
+        when(service.getTripWithSeatsMap(1L, Currency.USD)).thenReturn(tripSeatsMapDto);
 
         RestAssuredMockMvc.given().mockMvc(mvc)
                           .when().get("/api/public/trip/1?currency=USD")
@@ -264,18 +274,18 @@ class TripControllerTest {
                           .body("arrival.name", is(trip.getArrival().getName()))
                           .body("arrivalTime", is(trip.getArrivalTime().format(DateTimeFormatter.ISO_DATE_TIME)));
 
-        verify(service, times(1)).getTrip(1L, Currency.USD);
+        verify(service, times(1)).getTripWithSeatsMap(1L, Currency.USD);
     }
 
     @Test
     void whenGetTripByInvalidId_thenReturnNotFound() throws Exception {
-        when(service.getTrip(1L, null)).thenReturn(null);
+        when(service.getTripWithSeatsMap(1L, null)).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mvc)
                           .when().get("/api/public/trip/1")
                           .then().statusCode(404);
 
-        verify(service, times(1)).getTrip(1L, null);
+        verify(service, times(1)).getTripWithSeatsMap(1L, null);
     }
 
     @Test
@@ -305,14 +315,14 @@ class TripControllerTest {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
         reservation.setTrip(trip);
-        reservation.setSeats(1);
+        reservation.setSeats(Arrays.asList("1A"));
 
         when(reservationService.getReservationsByTripId(1L, null)).thenReturn(List.of(reservation));
 
         RestAssuredMockMvc.given().mockMvc(mvc)
                           .when().get("/api/backoffice/trip/1/reservations")
                           .then().statusCode(200)
-                          .body("[0].seats", is(1))
+                          .body("[0].seats", hasSize(1))
                           .body("[0].trip.id", is(1));
 
         verify(reservationService, times(1)).getReservationsByTripId(1L, null);
@@ -356,6 +366,48 @@ class TripControllerTest {
                           .body("arrivalTime", is(trip.getArrivalTime().format(DateTimeFormatter.ISO_DATE_TIME)));
 
         verify(service, times(1)).updateTrip(Mockito.any());
+    }
+
+    @Test
+    void whenFindAllTripsOnBackoffice_thenReturnAllTrips() throws Exception {
+        City city1 = new City();
+        city1.setId(1L);
+        city1.setName("Porto");
+
+        City city2 = new City();
+        city2.setId(2L);
+        city2.setName("Lisboa");
+
+        Bus bus = new Bus();
+        bus.setId(1L);
+        bus.setCapacity(50);
+        bus.setCompany("Flexibus");
+
+        Trip trip1 = new Trip();
+        trip1.setId(1L);
+        trip1.setDeparture(city1);
+        trip1.setArrival(city2);
+        trip1.setDepartureTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        trip1.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
+        trip1.setBus(bus);
+        trip1.setPrice(10.0);
+
+        Trip trip2 = new Trip();
+        trip2.setId(2L);
+        trip2.setDeparture(city2);
+        trip2.setArrival(city1);
+        trip2.setDepartureTime(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS));
+        trip2.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
+        trip2.setBus(bus);
+        trip2.setPrice(10.0);
+
+        when(service.getAllTrips()).thenReturn(List.of(trip1, trip2));
+
+
+        RestAssuredMockMvc.given().mockMvc(mvc)
+                          .when().get("/api/backoffice/trip")
+                          .then().statusCode(200)
+                          .body("$", hasSize(2));
     }
 
     @Test

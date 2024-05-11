@@ -1,6 +1,7 @@
 package pt.ua.deti.tqs.backend.services;
 
 import lombok.AllArgsConstructor;
+
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import pt.ua.deti.tqs.backend.entities.Bus;
@@ -10,6 +11,8 @@ import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParametersSpecification;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -55,6 +58,10 @@ public class TripService {
         return all;
     }
 
+    public List<Trip> getAllTrips() {
+        return tripRepository.findAll();
+    }
+
     public Trip getTrip(Long id, Currency currency) {
         Trip trip = tripRepository.findById(id).orElse(null);
 
@@ -62,6 +69,17 @@ public class TripService {
             trip.setPrice(currencyService.convertEurToCurrency(trip.getPrice(), currency));
         }
         return trip;
+    }
+
+    public TripSeatsMapDto getTripWithSeatsMap(Long id, Currency currency) {
+        Trip trip = getTrip(id, currency);
+        TripSeatsMapDto tripSeatsMapDto = null;
+
+        if(trip != null) {
+            tripSeatsMapDto = new TripSeatsMapDto(trip);
+        }
+
+        return tripSeatsMapDto;
     }
 
     public Trip updateTrip(Trip trip) {
@@ -77,6 +95,10 @@ public class TripService {
         existing.setDepartureTime(trip.getDepartureTime());
         existing.setArrivalTime(trip.getArrivalTime());
         existing.setPrice(trip.getPrice());
+        existing.setStatus(trip.getStatus());
+        if (trip.getStatus() == TripStatus.DELAYED) {
+            existing.setDelay(trip.getDelay());
+        }
 
         Trip save = tripRepository.save(existing);
         save.calculateFreeSeats();

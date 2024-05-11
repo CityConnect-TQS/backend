@@ -29,6 +29,12 @@ public class TripBackofficeController {
         return new ResponseEntity<>(tripService.createTrip(trip), HttpStatus.CREATED);
     }
 
+    @GetMapping
+    @Operation(summary = "Get trips")
+    public ResponseEntity<List<Trip>> getTrips() {
+        return new ResponseEntity<>(tripService.getAllTrips(), HttpStatus.OK);
+    }
+
     @GetMapping("{id}/reservations")
     @Operation(summary = "Get all reservations of a trip")
     public ResponseEntity<List<Reservation>> getReservationsByTripId(

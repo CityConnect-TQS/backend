@@ -11,6 +11,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"trip.status.update.delay=1000"})
 @Testcontainers
 class BusControllerTestIT {
     @Container
@@ -77,7 +79,7 @@ class BusControllerTestIT {
         Bus bus1 = createTestBus(50, "Flexibus");
         Bus bus2 = createTestBus(60, "Transdev");
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/bus")
+        RestAssured.when().get(BASE_URL + "/api/public/bus")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("capacity", hasItems(bus1.getCapacity(), bus2.getCapacity()))
@@ -88,7 +90,7 @@ class BusControllerTestIT {
     void whenGetBusById_thenStatus200() {
         Bus bus = createTestBus(50, "Flexibus");
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/bus/" + bus.getId())
+        RestAssured.when().get(BASE_URL + "/api/public/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("capacity", equalTo(bus.getCapacity()))
                    .body("company", equalTo(bus.getCompany()));
@@ -96,7 +98,7 @@ class BusControllerTestIT {
 
     @Test
     void whenGetBusByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/backoffice/bus/999")
+        RestAssured.when().get(BASE_URL + "/api/public/bus/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
