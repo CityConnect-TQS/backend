@@ -107,7 +107,7 @@ class TripServiceTest {
         assertThat(found.getSeatsMap().get(4).getId()).isEqualTo('C');
         assertThat(found.getSeatsMap().get(0).getSeats().get(11).getId()).isEqualTo(12);
         assertThat(found.getSeatsMap().get(0).getSeats().get(5).getId()).isEqualTo(6);
-        assertThat(found.getSeatsMap().get(0).getSeats().get(5).isAlreadyReserved()).isEqualTo(false);
+        assertThat(found.getSeatsMap().get(0).getSeats().get(5).isAlreadyReserved()).isFalse();
     }
 
     @Test

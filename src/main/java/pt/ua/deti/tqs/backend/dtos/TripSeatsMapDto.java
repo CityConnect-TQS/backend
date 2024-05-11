@@ -27,7 +27,6 @@ import pt.ua.deti.tqs.backend.constants.TripStatus;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 
-@Slf4j
 @Getter
 @Setter
 public class TripSeatsMapDto {
@@ -76,7 +75,7 @@ public class TripSeatsMapDto {
 
     private int delay;
 
-    private List<SeatsMap> seatsMap = new ArrayList<SeatsMap>();
+    private List<SeatsMap> seatsMap = new ArrayList<>();
 
     public TripSeatsMapDto(Trip trip){
         this.id = trip.getId();
@@ -93,17 +92,15 @@ public class TripSeatsMapDto {
         int capacity = trip.getBus().getCapacity();
         int numRows = capacity / 4;
         char[] columns = {'A', 'B', 'D', 'E'};
-        Collection<Reservation> tripReservations = trip.getReservations() != null ? trip.getReservations() : new ArrayList<Reservation>();
-        ArrayList<String> reservedSeats = new ArrayList<String>();
+        Collection<Reservation> tripReservations = trip.getReservations() != null ? trip.getReservations() : new ArrayList<>();
+        ArrayList<String> reservedSeats = new ArrayList<>();
 
         for (Reservation savedReservation : tripReservations) {
             reservedSeats.addAll(savedReservation.getSeats());
         }
 
-        log.info("numRows: " + numRows);
-
         for(int col = 1; col <= 4; col++){
-            List<Seat> seats = new ArrayList<Seat>();
+            List<Seat> seats = new ArrayList<>();
             for(int row = 1; row <= numRows; row++){
                 if(reservedSeats.contains((Integer.toString(row) + columns[col-1]))){
                     seats.add(new Seat(row, true));
@@ -117,7 +114,6 @@ public class TripSeatsMapDto {
 
         // add last seat on row of 5 if capacity is not a multiple of 4
         if(capacity % 4 != 0){
-            log.info("Adding last row of 5 seats");
             List<Seat> seats = new ArrayList<Seat>();
             if(reservedSeats.contains((Integer.toString(numRows) + 'C'))){
                 seats.add(new Seat(numRows, true));
@@ -127,8 +123,6 @@ public class TripSeatsMapDto {
             }     
             this.seatsMap.add(new SeatsMap('C', seats)); 
         }
-
-        log.info("" + seatsMap.size());
 
     }
 }

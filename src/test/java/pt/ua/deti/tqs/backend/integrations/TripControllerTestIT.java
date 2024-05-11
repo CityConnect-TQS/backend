@@ -15,6 +15,9 @@ import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import static org.awaitility.Awaitility.await;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Trip;
@@ -411,68 +414,74 @@ class TripControllerTestIT {
 
     @Test
     void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(1, TripStatus.ONTIME, 0);
+        Trip trip = createTripForStatusTesting(5, TripStatus.ONTIME, 0);
 
-        Thread.sleep(1000);
-
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("status", equalTo("ONBOARDING"));
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ONBOARDING"));
+           });
     }
 
     @Test
     void givenOnTimeTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
         Trip trip = createTripForStatusTesting(11, TripStatus.ONTIME, 0);
 
-        Thread.sleep(1000);
-
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("status", equalTo("ONTIME"));
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ONTIME"));
+           });
     }
 
     @Test
     void givenDelayedTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(1, TripStatus.DELAYED, 5);
+        Trip trip = createTripForStatusTesting(3, TripStatus.DELAYED, 5);
 
-        Thread.sleep(1000);
-
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("status", equalTo("ONBOARDING"));
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ONBOARDING"));
+           });
     }
 
     @Test
     void givenDelayedTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(1, TripStatus.DELAYED, 11);
+        Trip trip = createTripForStatusTesting(5, TripStatus.DELAYED, 11);
 
-        Thread.sleep(1000);
-
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("status", equalTo("DELAYED"));
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("DELAYED"));
+           });
     }
 
     @Test
     void givenOnboardingTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
         Trip trip = createTripForStatusTesting(0, TripStatus.ONBOARDING, 0);
 
-        Thread.sleep(1000);
-
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("status", equalTo("DEPARTED"));
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("DEPARTED"));
+           });
     }
 
     @Test
     void givenOnboardingDelayredTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
         Trip trip = createTripForStatusTesting(-5, TripStatus.ONBOARDING, 5);
 
-        Thread.sleep(1000);
-
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("status", equalTo("DEPARTED"));
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("DEPARTED"));
+           });
     }
 
     private Trip createTripForStatusTesting(Integer departureMinutes, TripStatus status, Integer delay) {
