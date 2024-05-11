@@ -1,6 +1,7 @@
 package pt.ua.deti.tqs.backend.services;
 
 import lombok.AllArgsConstructor;
+
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import pt.ua.deti.tqs.backend.entities.Bus;
@@ -11,6 +12,7 @@ import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParametersSpecification;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,6 +69,13 @@ public class TripService {
             trip.setPrice(currencyService.convertEurToCurrency(trip.getPrice(), currency));
         }
         return trip;
+    }
+
+    public TripSeatsMapDto getTripWithSeatsMap(Long id, Currency currency) {
+        Trip trip = getTrip(id, currency);
+
+        TripSeatsMapDto tripSeatsMapDto = new TripSeatsMapDto(trip);
+        return tripSeatsMapDto;
     }
 
     public Trip updateTrip(Trip trip) {

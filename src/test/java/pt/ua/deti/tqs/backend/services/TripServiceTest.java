@@ -15,6 +15,7 @@ import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,7 +46,7 @@ class TripServiceTest {
 
         Bus bus = new Bus();
         bus.setId(1L);
-        bus.setCapacity(50);
+        bus.setCapacity(49);
 
         Trip trip1 = new Trip();
         trip1.setId(1L);
@@ -55,6 +56,7 @@ class TripServiceTest {
         trip1.setDeparture(city1);
         trip1.setArrival(city2);
         trip1.setBus(bus);
+        trip1.setFreeSeats(49);
 
         Trip trip2 = new Trip();
         trip2.setId(2L);
@@ -88,6 +90,24 @@ class TripServiceTest {
 
         assertThat(found).isNotNull();
         assertThat(found.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void whenGetTripWithSeatsMap_thenTripSeatsMapDtoShouldBeFound() {
+        TripSeatsMapDto found = tripService.getTripWithSeatsMap(1L, null);
+
+        assertThat(found).isNotNull();
+        assertThat(found.getId()).isEqualTo(1L);
+        assertThat(found.getSeatsMap().size()).isEqualTo(5);
+        assertThat(found.getSeatsMap().get(0).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(1).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(2).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(3).getSeats().size()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(4).getSeats().size()).isEqualTo(1);
+        assertThat(found.getSeatsMap().get(4).getId()).isEqualTo('C');
+        assertThat(found.getSeatsMap().get(0).getSeats().get(11).getId()).isEqualTo(12);
+        assertThat(found.getSeatsMap().get(0).getSeats().get(5).getId()).isEqualTo(6);
+        assertThat(found.getSeatsMap().get(0).getSeats().get(5).isAlreadyReserved()).isEqualTo(false);
     }
 
     @Test

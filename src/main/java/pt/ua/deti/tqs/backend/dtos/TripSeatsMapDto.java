@@ -3,6 +3,7 @@ package pt.ua.deti.tqs.backend.dtos;
 import java.time.LocalDateTime;
 
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -16,18 +17,30 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 
+import pt.ua.deti.tqs.backend.entities.Reservation;
+import pt.ua.deti.tqs.backend.entities.Trip;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+@Slf4j
 @Getter
 @Setter
-@AllArgsConstructor
 public class TripSeatsMapDto {
 
-    class Seat{
-        String id;   // row id
+    @AllArgsConstructor
+    @Getter
+    @Setter
+    public class Seat{
+        int id;   // row id
         boolean isAlreadyReserved;
     }
 
-    class SeatsMap{
-        int id;  // "column" id, from start to end of the bus
+    @AllArgsConstructor
+    @Getter
+    @Setter
+    public class SeatsMap{
+        char id;  // "column" id, from start to end of the bus
         List<Seat> seats;
     }
 
@@ -55,5 +68,57 @@ public class TripSeatsMapDto {
 
     private int freeSeats;
 
-    private SeatsMap seatsMap;
+    private List<SeatsMap> seatsMap = new ArrayList<SeatsMap>();
+
+    public TripSeatsMapDto(Trip trip){
+        this.id = trip.getId();
+        this.departureId = trip.getDeparture().getId();
+        this.departureTime = trip.getDepartureTime();
+        this.arrivalId = trip.getArrival().getId();
+        this.arrivalTime = trip.getArrivalTime();
+        this.price = trip.getPrice();
+        this.busId = trip.getBus().getId();
+        this.freeSeats = trip.getFreeSeats();
+        
+        int capacity = trip.getBus().getCapacity();
+        int numRows = capacity / 4;
+        char[] columns = {'A', 'B', 'D', 'E'};
+        Collection<Reservation> tripReservations = trip.getReservations() != null ? trip.getReservations() : new ArrayList<Reservation>();
+        ArrayList<String> reservedSeats = new ArrayList<String>();
+
+        for (Reservation savedReservation : tripReservations) {
+            reservedSeats.addAll(savedReservation.getSeats());
+        }
+
+        log.info("numRows: " + numRows);
+
+        for(int col = 1; col <= 4; col++){
+            List<Seat> seats = new ArrayList<Seat>();
+            for(int row = 1; row <= numRows; row++){
+                if(reservedSeats.contains((Integer.toString(row) + columns[col-1]))){
+                    seats.add(new Seat(row, true));
+                }
+                else{
+                    seats.add(new Seat(row, false));
+                }     
+            }
+            this.seatsMap.add(new SeatsMap(columns[col-1], seats));           
+        }
+
+        // add last seat on row of 5 if capacity is not a multiple of 4
+        if(capacity % 4 != 0){
+            log.info("Adding last row of 5 seats");
+            List<Seat> seats = new ArrayList<Seat>();
+            if(reservedSeats.contains((Integer.toString(numRows) + 'C'))){
+                seats.add(new Seat(numRows, true));
+            }
+            else{
+                seats.add(new Seat(numRows, false));
+            }     
+            this.seatsMap.add(new SeatsMap('C', seats)); 
+        }
+
+        log.info("" + seatsMap.size());
+
+    }
 }
