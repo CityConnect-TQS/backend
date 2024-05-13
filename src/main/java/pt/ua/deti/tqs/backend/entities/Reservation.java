@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Collection;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +21,7 @@ public class Reservation {
     private Long id;
 
     @Column(nullable = false)
-    private Integer seats;
+    private Collection<String> seats;
 
     @ManyToOne
     @JoinColumn(nullable = false)

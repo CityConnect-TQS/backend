@@ -1,4 +1,4 @@
-package pt.ua.deti.tqs.backend.services;
+package pt.ua.deti.tqs.backend.integrations;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,17 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.client.RestTemplate;
 import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.helpers.CurrencyApiResponse;
+import pt.ua.deti.tqs.backend.services.ApiService;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
+@TestPropertySource(properties = {"trip.status.update.delay=1000"})
 @SpringBootTest
-class ApiServiceTest {
+class ApiServiceTestIT {
     @MockBean
     private RestTemplate restTemplate;
 

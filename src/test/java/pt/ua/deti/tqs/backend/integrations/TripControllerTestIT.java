@@ -11,15 +11,20 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import static org.awaitility.Awaitility.await;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.repositories.BusRepository;
 import pt.ua.deti.tqs.backend.repositories.CityRepository;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -31,6 +36,7 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
+@TestPropertySource(properties = {"trip.status.update.delay=1000"})
 class TripControllerTestIT {
     @Container
     public static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16")
@@ -128,7 +134,8 @@ class TripControllerTestIT {
                          hasItems(trip1.getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                                   trip2.getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
                    .body("arrivalTime", hasItems(trip1.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                                                 trip2.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+                                                 trip2.getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
+                   .body("status", hasItems("ONTIME", "ONTIME"));
     }
 
     @Test
@@ -362,6 +369,8 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         trip.setPrice(20.0);
+        trip.setStatus(TripStatus.DELAYED);
+        trip.setDelay(5);
         RestAssured.given().contentType(ContentType.JSON).body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value())
@@ -403,13 +412,93 @@ class TripControllerTestIT {
                    .body("", hasSize(3));
     }
 
+    @Test
+    void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(5, TripStatus.ONTIME, 0);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ONBOARDING"));
+           });
+    }
+
+    @Test
+    void givenOnTimeTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(11, TripStatus.ONTIME, 0);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ONTIME"));
+           });
+    }
+
+    @Test
+    void givenDelayedTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(3, TripStatus.DELAYED, 5);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ONBOARDING"));
+           });
+    }
+
+    @Test
+    void givenDelayedTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(5, TripStatus.DELAYED, 11);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("DELAYED"));
+           });
+    }
+
+    @Test
+    void givenOnboardingTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(0, TripStatus.ONBOARDING, 0);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("DEPARTED"));
+           });
+    }
+
+    @Test
+    void givenOnboardingDelayredTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(-5, TripStatus.ONBOARDING, 5);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("DEPARTED"));
+           });
+    }
+
+    private Trip createTripForStatusTesting(Integer departureMinutes, TripStatus status, Integer delay) {
+        Trip trip = createTestTrip();
+        trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setStatus(status);
+        trip.setDelay(delay);
+        return repository.saveAndFlush(trip);
+    }
+
     private Trip createTestTrip() {
         return createTestTrip("Aveiro", "Aveiro");
     }
 
     private Trip createTestTrip(String departure, String arrival) {
         Bus bus = new Bus();
-        bus.setCapacity(50);
+        bus.setCapacity(48);
         bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
@@ -423,12 +512,12 @@ class TripControllerTestIT {
 
         Trip trip = new Trip();
         trip.setDeparture(city);
-        trip.setDepartureTime(LocalDateTime.now().plusMinutes(1).truncatedTo(ChronoUnit.SECONDS));
+        trip.setDepartureTime(LocalDateTime.now().plusMinutes(15).truncatedTo(ChronoUnit.SECONDS));
         trip.setArrival(city2);
         trip.setArrivalTime(LocalDateTime.now().plusHours(3).truncatedTo(ChronoUnit.SECONDS));
         trip.setBus(bus);
         trip.setPrice(10.0);
-        trip.setFreeSeats(50);
+        trip.setFreeSeats(48);
         return repository.saveAndFlush(trip);
     }
 }
