@@ -11,6 +11,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -19,6 +20,7 @@ import pt.ua.deti.tqs.backend.entities.*;
 import pt.ua.deti.tqs.backend.repositories.*;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +28,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"trip.status.update.delay=1000"})
 @Testcontainers
 class UserControllerTestIT {
     @Container
@@ -282,7 +285,7 @@ class UserControllerTestIT {
         reservation.setUser(user);
         reservation.setTrip(trip);
         reservation.setPrice(10.0);
-        reservation.setSeats(1);
+        reservation.setSeats(Arrays.asList("1A", "1B"));
 
         return reservationRepository.saveAndFlush(reservation);
     }

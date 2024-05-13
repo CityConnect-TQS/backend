@@ -11,6 +11,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -20,12 +21,14 @@ import pt.ua.deti.tqs.backend.repositories.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
+@TestPropertySource(properties = {"trip.status.update.delay=1000"})
 class ReservationControllerTestIT {
     @Container
     public static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16")
@@ -105,7 +108,7 @@ class ReservationControllerTestIT {
         reservation.setUser(user);
         reservation.setTrip(trip);
         reservation.setPrice(10.0);
-        reservation.setSeats(1);
+        reservation.setSeats(Arrays.asList("1A"));
 
         RestAssured.given().contentType(ContentType.JSON).body(reservation)
                    .when().post(BASE_URL + "/api/public/reservation")
@@ -124,7 +127,7 @@ class ReservationControllerTestIT {
     @Test
     void whenValidInputAndSeatsGreaterThanCapacity_thenBadRequest() {
         Bus bus = new Bus();
-        bus.setCapacity(50);
+        bus.setCapacity(5);
         bus.setCompany("Flexibus");
         bus = busRepository.saveAndFlush(bus);
 
@@ -152,13 +155,13 @@ class ReservationControllerTestIT {
         reservation.setUser(user);
         reservation.setTrip(trip);
         reservation.setPrice(10.0);
-        reservation.setSeats(51);
+        reservation.setSeats(Arrays.asList("1A", "1B", "1C", "1D", "1E", "1F", "1G", "1H", "1I", "1J"));
 
         RestAssured.given().contentType(ContentType.JSON).body(reservation)
                    .when().post(BASE_URL + "/api/public/reservation")
                    .then().statusCode(HttpStatus.BAD_REQUEST.value());
     }
-
+    
     @Test
     void givenReservations_whenGetReservations_thenStatus200() {
         Reservation reservation1 = createTestReservation();
@@ -242,32 +245,6 @@ class ReservationControllerTestIT {
     }
 
     @Test
-    void whenUpdateReservation_thenStatus200() {
-        Reservation reservation = createTestReservation();
-        reservation.setSeats(2);
-        reservation.setPrice(20.0);
-
-        RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .when().put(BASE_URL + "/api/backoffice/reservation/" + reservation.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("price", equalTo((float) reservation.getPrice()))
-                   .body("seats", equalTo(reservation.getSeats()));
-
-        Reservation updated = repository.findById(reservation.getId()).orElse(null);
-        assertThat(updated).isNotNull().extracting(Reservation::getSeats, Reservation::getPrice)
-                           .containsExactly(2, 20.0);
-    }
-
-    @Test
-    void whenUpdateInvalidReservation_thenStatus404() {
-        Reservation reservation = createTestReservation();
-
-        RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .when().put(BASE_URL + "/api/backoffice/reservation/999")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
-    }
-
-    @Test
     void whenDeleteReservation_thenStatus200() {
         Reservation reservation = createTestReservation();
 
@@ -317,7 +294,7 @@ class ReservationControllerTestIT {
         reservation.setUser(user);
         reservation.setTrip(trip);
         reservation.setPrice(10.0);
-        reservation.setSeats(1);
+        reservation.setSeats(Arrays.asList("1A"));
 
         return repository.saveAndFlush(reservation);
     }
