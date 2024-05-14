@@ -5,18 +5,24 @@ import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.repositories.BusRepository;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
 import java.util.List;
 
@@ -25,6 +31,7 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"trip.status.update.delay=1000"})
+@AutoConfigureMockMvc(addFilters = false)
 @Testcontainers
 class BusControllerTestIT {
     @Container
@@ -40,6 +47,20 @@ class BusControllerTestIT {
 
     @Autowired
     private BusRepository repository;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private CustomUserDetailsService userService;
+
+    private String jwtToken;
+
+    @BeforeEach
+    public void setUp() {
+        Authentication authentication = Mockito.mock(Authentication.class);
+        jwtToken = "Bearer " + jwtUtils.generateJwtToken(authentication);
+    }
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -64,11 +85,15 @@ class BusControllerTestIT {
         bus.setCapacity(50);
         bus.setCompany("Flexibus");
 
-        RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().post(BASE_URL + "/api/backoffice/bus")
-                   .then().statusCode(HttpStatus.CREATED.value())
-                   .body("capacity", equalTo(bus.getCapacity()))
-                   .body("company", equalTo(bus.getCompany()));
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+                .auth().preemptive().basic("username", "password")
+                .body(bus)
+                .when().post(BASE_URL + "/api/backoffice/bus")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .body("capacity", equalTo(bus.getCapacity()))
+                .body("company", equalTo(bus.getCompany()));
+
 
         List<Bus> found = repository.findAll();
         assertThat(found).extracting(Bus::getCapacity).containsOnly(bus.getCapacity());
@@ -108,14 +133,16 @@ class BusControllerTestIT {
 
         bus.setCapacity(60);
         RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().put(BASE_URL + "/api/backoffice/bus/" + bus.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("capacity", equalTo(bus.getCapacity()))
-                   .body("company", equalTo(bus.getCompany()));
+                .header("Authorization", "Bearer " + jwtToken)
+                .when().put(BASE_URL + "/api/backoffice/bus/" + bus.getId())
+                .then().statusCode(HttpStatus.OK.value())
+                .body("capacity", equalTo(bus.getCapacity()))
+                .body("company", equalTo(bus.getCompany()));
 
         Bus updatedBus = repository.findById(bus.getId()).orElse(null);
         assertThat(updatedBus).isNotNull().extracting(Bus::getCapacity).isEqualTo(60);
     }
+
 
     @Test
     void whenUpdateInvalidBus_thenStatus404() {
