@@ -38,10 +38,25 @@ public class LoginSteps {
                    .body("email", equalTo(email));
     }
 
+    @Given("There is a user account with name {string}, email {string} and password {string}")
+    public void thereIsAUserAccountWithEmailAndPassword(String name, String email, String password) {
+        String body = "{\"password\":\"" + password +
+                "\",\"name\":\"" + name +
+                "\",\"email\":\"" + email +
+                "\"}";
+
+        RestAssured.given().contentType(ContentType.JSON)
+                   .body(body)
+                   .when().post("http://api.localhost/api/public/user")
+                   .then().statusCode(HttpStatus.CREATED.value())
+                   .body("name", equalTo(name))
+                   .body("email", equalTo(email));
+    }
+
     @Given("I navigate to {string}")
     public void iNavigateTo(String url) {
         FirefoxOptions options = new FirefoxOptions();
-        // options.addArguments("-headless");
+        options.addArguments("-headless");
 
         driver = new FirefoxDriver(options);
         driver.get(url);
@@ -88,5 +103,10 @@ public class LoginSteps {
     @And("I am logged out")
     public void iAmLoggedOut() {
         assertThat(driver.findElements(By.id("userText"))).isEmpty();
+    }
+
+    @Then("there is a message about unsufficient permissions")
+    public void thereIsAMessageAboutUnsufficientPermissions() {
+        assertThat(driver.findElement(By.id("loginError")).getText()).isEqualTo("error\nUnsufficient permissions");
     }
 }
