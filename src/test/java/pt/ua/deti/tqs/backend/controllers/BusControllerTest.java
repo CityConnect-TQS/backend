@@ -5,13 +5,16 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.controllers.backoffice.BusBackofficeController;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.services.BusService;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
 import java.util.Arrays;
 
@@ -21,12 +24,19 @@ import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest({BusBackofficeController.class, BusController.class})
+@AutoConfigureMockMvc(addFilters = false)
 class BusControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private BusService service;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private CustomUserDetailsService userService;
 
     @Test
     void whenPostBus_thenCreateBus() {
