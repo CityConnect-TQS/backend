@@ -6,9 +6,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.controllers.backoffice.TripBackofficeController;
 import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 import pt.ua.deti.tqs.backend.entities.Bus;
@@ -16,6 +18,7 @@ import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.helpers.Currency;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 import pt.ua.deti.tqs.backend.services.ReservationService;
 import pt.ua.deti.tqs.backend.services.TripService;
 
@@ -30,6 +33,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest({TripController.class, TripBackofficeController.class})
+@AutoConfigureMockMvc(addFilters = false)
 class TripControllerTest {
     @Autowired
     private MockMvc mvc;
@@ -39,6 +43,12 @@ class TripControllerTest {
 
     @MockBean
     private ReservationService reservationService;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private CustomUserDetailsService userService;
 
     @BeforeEach
     public void setUp() {

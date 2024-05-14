@@ -4,14 +4,17 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.controllers.backoffice.ReservationBackofficeController;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.entities.User;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 import pt.ua.deti.tqs.backend.services.ReservationService;
 
 import java.util.Arrays;
@@ -22,12 +25,19 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest({ReservationBackofficeController.class, ReservationController.class})
+@AutoConfigureMockMvc(addFilters = false)
 class ReservationControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private ReservationService service;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private CustomUserDetailsService userService;
 
     @Test
     void whenPostReservation_thenCreateReservation() {

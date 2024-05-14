@@ -1,31 +1,38 @@
 package pt.ua.deti.tqs.backend.controllers;
 
+import io.cucumber.core.internal.com.fasterxml.jackson.databind.ObjectMapper;
 import io.restassured.module.mockmvc.RestAssuredMockMvc;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.controllers.backoffice.UserBackofficeController;
+import pt.ua.deti.tqs.backend.dtos.LoginRequest;
 import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 import pt.ua.deti.tqs.backend.entities.User;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 import pt.ua.deti.tqs.backend.services.ReservationService;
 import pt.ua.deti.tqs.backend.services.UserService;
 
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.AdditionalAnswers.returnsSecondArg;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest({UserController.class, UserBackofficeController.class})
+@AutoConfigureMockMvc(addFilters = false)
 class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -35,6 +42,12 @@ class UserControllerTest {
 
     @MockBean
     private ReservationService reservationService;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private CustomUserDetailsService userService;
 
     @Test
     void whenPostNormalUser_thenCreateUser() {
@@ -123,7 +136,6 @@ class UserControllerTest {
     }
 
     @Test
-    @Disabled("Waiting for new login implementation")
     void whenGetUserByValidEmailAndPassword_thenGetUser() {
         User user = new User();
         user.setId(1L);
@@ -131,25 +143,28 @@ class UserControllerTest {
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
 
-        // when(service.loginUser(user.getEmail(), user.getPassword())).thenReturn(user);
+        LoginRequest loginRequest = new LoginRequest("johndoe@ua.pt", "password");
 
-        RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON)
-                          .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password\"}")
+        LoginResponse loginResponse = new LoginResponse(user.getId(), user.getName(), user.getEmail(),
+                                                        user.getRoles(), "token", 123456789L);
+
+        when(service.loginUser(Mockito.any(LoginRequest.class))).thenReturn(loginResponse);
+
+        RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(loginRequest)
                           .when().post("/api/public/user/login")
                           .then().statusCode(200)
                           .body("id", is(1))
-                          .body("name", is(user.getName()))
-                          .body("email", is(user.getEmail()));
+                          .body("name", is("John Doe"))
+                          .body("email", is("johndoe@ua.pt"));
+
+        verify(service, times(1)).loginUser(Mockito.any(LoginRequest.class));
     }
 
     @Test
-    @Disabled("Waiting for new login implementation")
     void whenGetUserByInvalidEmailAndPassword_thenGetNull() {
         User user = new User();
         user.setEmail("wrongEmail");
         user.setPassword("wrongPassword");
-
-        // when(service.loginUser("wrongEmail", "wrongPassword")).thenReturn(null);
 
         RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
                           .when().post("/api/public/user/login")
@@ -208,7 +223,7 @@ class UserControllerTest {
     }
 
     @Test
-    void whenUpdateUser_thenUpdateUser() {
+    void whenUpdateUser_thenUpdateUser() throws Exception {
         User user = new User();
         user.setId(1L);
         user.setName("John Doe");
@@ -216,17 +231,20 @@ class UserControllerTest {
         user.setPassword("password");
         user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
 
-        when(service.updateUser(Mockito.any(Long.class), Mockito.any(User.class))).then(returnsSecondArg());
+        LoginResponse loginResponse = new LoginResponse(user.getId(), user.getName(), user.getEmail(), user.getRoles(), "token", 123456789L);
 
-        RestAssuredMockMvc.given().mockMvc(mockMvc).contentType(MediaType.APPLICATION_JSON).body(user)
-                          .when().put("/api/backoffice/user/1")
-                          .then().statusCode(200)
-                          .body("id", is(1))
-                          .body("name", is("John Doe"))
-                          .body("email", is("johndoe@ua.pt"))
-                          .body("roles", hasSize(2))
-                          .body("roles[0]", is(UserRole.USER.toString()))
-                          .body("roles[1]", is(UserRole.STAFF.toString()));
+        when(service.updateUser(Mockito.any(Long.class), Mockito.any(User.class))).thenReturn(loginResponse);
+
+        mockMvc.perform(put("/api/backoffice/user/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(user)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("John Doe")))
+                .andExpect(jsonPath("$.email", is("johndoe@ua.pt")))
+                .andExpect(jsonPath("$.roles", hasSize(2)))
+                .andExpect(jsonPath("$.roles[0]", is(UserRole.USER.toString())))
+                .andExpect(jsonPath("$.roles[1]", is(UserRole.STAFF.toString())));
 
         verify(service, times(1)).updateUser(Mockito.any(Long.class), Mockito.any(User.class));
     }

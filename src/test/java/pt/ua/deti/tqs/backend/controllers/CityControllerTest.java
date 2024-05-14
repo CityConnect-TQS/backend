@@ -4,14 +4,17 @@ import io.restassured.module.mockmvc.RestAssuredMockMvc;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.controllers.backoffice.CityBackofficeController;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.services.CityService;
+import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,12 +25,19 @@ import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.Mockito.*;
 
 @WebMvcTest({CityBackofficeController.class, CityController.class})
+@AutoConfigureMockMvc(addFilters = false)
 class CityControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private CityService service;
+
+    @MockBean
+    private JwtUtils jwtUtils;
+
+    @MockBean
+    private CustomUserDetailsService userService;
 
     @Test
     void whenPostCity_thenCreateCity() {
