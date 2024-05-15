@@ -30,6 +30,21 @@ class UserServiceTest {
 
     @BeforeEach
     public void setUp() {
+//        String user1 = "{\"password\":\"" + "john123" +
+//                "\",\"name\":\"" + "John" +
+//                "\",\"email\":\"" + "john@ua.pt" +
+//                "\",\"roles\":[\"USER\"]}";
+//
+//        String user2 = "{\"password\":\"" + "jane123" +
+//                "\",\"name\":\"" + "Jane" +
+//                "\",\"email\":\"" + "jane@ua.pt" +
+//                "\",\"roles\":[\"USER\",\"ADMIN\"]}";
+//
+//        String user3 = "{\"password\":\"" + "alice123" +
+//                "\",\"name\":\"" + "Alice" +
+//                "\",\"email\":\"" + "alice@ua.pt" +
+//                "\",\"roles\":[\"USER\"]}";
+
         User user1 = new User();
         user1.setId(1L);
         user1.setName("John");

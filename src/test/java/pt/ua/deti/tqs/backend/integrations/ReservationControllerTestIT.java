@@ -30,7 +30,6 @@ import static org.hamcrest.Matchers.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @TestPropertySource(properties = {"trip.status.update.delay=1000"})
-@AutoConfigureMockMvc(addFilters = false)
 class ReservationControllerTestIT {
     @Container
     public static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16")
@@ -126,7 +125,7 @@ class ReservationControllerTestIT {
         reservation.setPrice(10.0);
         reservation.setSeats(Arrays.asList("1A"));
 
-        RestAssured.given().contentType(ContentType.JSON).body(reservation)
+        RestAssured.given().contentType(ContentType.JSON).header("Authorization", "Bearer " + jwtToken).body(reservation)
                    .when().post(BASE_URL + "/api/public/reservation")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) reservation.getPrice()))
@@ -264,7 +263,7 @@ class ReservationControllerTestIT {
     void whenDeleteReservation_thenStatus200() {
         Reservation reservation = createTestReservation();
 
-        RestAssured.when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
+        RestAssured.given().contentType(ContentType.JSON).header("Authorization", "Bearer " + jwtToken).body(reservation).when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         Reservation found = repository.findById(reservation.getId()).orElse(null);

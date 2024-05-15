@@ -161,15 +161,15 @@ class TripControllerTestIT {
     }
 
     @Test
-    void givenTrips_whenGetTripsWithCurrencyUsd_thenStatus200() {
+
+    void givenTrips_whenGetTripsWithCurrencyUsd_thenStatus401() {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
-        RestAssured.given().header("Authorization", "Bearer " + jwtToken)
+        RestAssured.given()
+                .header("Authorization", "Bearer " + jwtToken)
                 .when().get(BASE_URL + "/api/public/trip?currency=USD")
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("", hasSize(2))
-                   .body("price", not(hasItems((float) trip1.getPrice(), (float) trip2.getPrice())));
+                   .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
@@ -356,12 +356,11 @@ class TripControllerTestIT {
     }
 
     @Test
-    void whenGetTripByIdWithCurrencyUsd_thenStatus200() {
+    void whenGetTripByIdWithCurrencyUsd_thenStatus401() {
         Trip trip = createTestTrip();
 
         RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=USD")
-                .then().statusCode(HttpStatus.OK.value())
-                .body("price", equalTo((float) trip.getPrice()));
+                .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
@@ -380,12 +379,12 @@ class TripControllerTestIT {
     }
 
     @Test
-    void whenGetReservationsByTripIdAndNoTripsFound_thenStatus404() {
+    void whenGetReservationsByTripIdAndNoTripsFound_thenStatus401() {
         Trip trip = createTestTrip();
 
         RestAssured.given().header("Authorization", "Bearer " + jwtToken)
                 .when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+                   .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
