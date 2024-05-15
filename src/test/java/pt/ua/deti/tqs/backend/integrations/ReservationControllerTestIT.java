@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -30,6 +31,7 @@ import static org.hamcrest.Matchers.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @TestPropertySource(properties = {"trip.status.update.delay=1000"})
+@AutoConfigureMockMvc(addFilters = false)
 class ReservationControllerTestIT {
     @Container
     public static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16")
@@ -57,8 +59,6 @@ class ReservationControllerTestIT {
     @Autowired
     private UserRepository userRepository;
 
-    private String jwtToken;
-
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -67,20 +67,8 @@ class ReservationControllerTestIT {
     }
 
     @BeforeEach
-    public void createAdminUser() {
+    void setBASE_URL() {
         BASE_URL = "http://localhost:" + randomServerPort;
-
-        String body = "{\"password\":\"" + "password" +
-                "\",\"name\":\"" + "name" +
-                "\",\"email\":\"" + "email" +
-                "\",\"roles\":[\"USER\",\"STAFF\"]}";
-
-        jwtToken = RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(body)
-                .when().post(BASE_URL + "/api/backoffice/user")
-                .then().statusCode(HttpStatus.CREATED.value())
-                .extract().jsonPath().getString("token");
     }
 
     @AfterEach
@@ -94,6 +82,20 @@ class ReservationControllerTestIT {
 
     @Test
     void whenValidInput_thenCreateReservation() {
+        BASE_URL = "http://localhost:" + randomServerPort;
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        String jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
         Bus bus = new Bus();
         bus.setCapacity(50);
         bus.setCompany("Flexibus");
@@ -103,11 +105,8 @@ class ReservationControllerTestIT {
         city.setName("Aveiro");
         city = cityRepository.saveAndFlush(city);
 
-        User user = new User();
-        user.setEmail("user@ua.pt");
-        user.setName("User");
-        user.setPassword("password");
-        user = userRepository.saveAndFlush(user);
+        // get user
+        User user = userRepository.findById(1L).orElse(null);
 
         Trip trip = new Trip();
         trip.setBus(bus);
@@ -123,9 +122,10 @@ class ReservationControllerTestIT {
         reservation.setUser(user);
         reservation.setTrip(trip);
         reservation.setPrice(10.0);
-        reservation.setSeats(Arrays.asList("1A"));
+        reservation.setSeats(List.of("1A"));
 
-        RestAssured.given().contentType(ContentType.JSON).header("Authorization", "Bearer " + jwtToken).body(reservation)
+        RestAssured.given().contentType(ContentType.JSON).body(reservation)
+                .header("Authorization", "Bearer " + jwtToken)
                    .when().post(BASE_URL + "/api/public/reservation")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) reservation.getPrice()))
@@ -263,7 +263,7 @@ class ReservationControllerTestIT {
     void whenDeleteReservation_thenStatus200() {
         Reservation reservation = createTestReservation();
 
-        RestAssured.given().contentType(ContentType.JSON).header("Authorization", "Bearer " + jwtToken).body(reservation).when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
+        RestAssured.when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         Reservation found = repository.findById(reservation.getId()).orElse(null);
