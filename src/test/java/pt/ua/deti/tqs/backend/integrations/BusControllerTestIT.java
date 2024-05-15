@@ -5,24 +5,20 @@ import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.repositories.BusRepository;
-import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
+import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
 import java.util.List;
 
@@ -31,7 +27,6 @@ import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"trip.status.update.delay=1000"})
-@AutoConfigureMockMvc(addFilters = false)
 @Testcontainers
 class BusControllerTestIT {
     @Container
@@ -48,19 +43,10 @@ class BusControllerTestIT {
     @Autowired
     private BusRepository repository;
 
-    @MockBean
-    private JwtUtils jwtUtils;
-
-    @MockBean
-    private CustomUserDetailsService userService;
+    @Autowired
+    private UserRepository userRepository;
 
     private String jwtToken;
-
-    @BeforeEach
-    public void setUp() {
-        Authentication authentication = Mockito.mock(Authentication.class);
-        jwtToken = "Bearer " + jwtUtils.generateJwtToken(authentication);
-    }
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -70,13 +56,27 @@ class BusControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
     }
+
 
     @AfterEach
     public void resetDb() {
         repository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -87,7 +87,7 @@ class BusControllerTestIT {
 
         RestAssured.given()
                 .contentType(ContentType.JSON)
-                .auth().preemptive().basic("username", "password")
+                .header("Authorization", "Bearer " + jwtToken)
                 .body(bus)
                 .when().post(BASE_URL + "/api/backoffice/bus")
                 .then().statusCode(HttpStatus.CREATED.value())
@@ -148,7 +148,8 @@ class BusControllerTestIT {
     void whenUpdateInvalidBus_thenStatus404() {
         Bus bus = createTestBus(50, "Flexibus");
 
-        RestAssured.given().contentType(ContentType.JSON).body(bus)
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).body(bus)
                    .when().put(BASE_URL + "/api/backoffice/bus/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -157,11 +158,13 @@ class BusControllerTestIT {
     void whenDeleteBus_thenStatus200() {
         Bus bus = createTestBus(50, "Flexibus");
 
-        RestAssured.when().delete(BASE_URL + "/api/backoffice/bus/" + bus.getId())
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken)
+                   .when().delete(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(bus.getId())).isEmpty();
     }
+
 
     private Bus createTestBus(int capacity, String company) {
         Bus bus = new Bus();
@@ -170,4 +173,5 @@ class BusControllerTestIT {
         repository.saveAndFlush(bus);
         return bus;
     }
+
 }
