@@ -14,12 +14,13 @@ Feature: Check existing trips
     And I fill in arrival with 1
     And I fill in date with "05/24/2024"
     And I search for trips
-    Then I should see a list of trips on date "05/24/2024"
+    Then I should see a list of trips on date "05/24/2024" or after this date
 
 
   Scenario: Check existing trips but there are none
     When I navigate to "http://localhost"
     And I fill in departure with 3
     And I fill in arrival with 1
+    And I fill in date with "05/24/2025"
     And I search for trips
     Then I should see a message saying there "No trips available for this date"
