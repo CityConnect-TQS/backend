@@ -44,8 +44,8 @@ public class TripStatusSchedulerService {
             for (City city : allCities) {
                 List<Trip> departureTrips = tripService.getTripsForDigitalSignageDeparture(city);
                 List<Trip> arrivalTrips = tripService.getTripsForDigitalSignageArrival(city);
-                template.convertAndSend("/signage/cities" + city.getName() + "/departure", departureTrips);
-                template.convertAndSend("/signage/cities" + city.getName() + "/departure", arrivalTrips);
+                template.convertAndSend("/signage/cities/" + city.getId() + "/departure", departureTrips);
+                template.convertAndSend("/signage/cities/" + city.getId() + "/arrival", arrivalTrips);
             }
         } catch (Exception e) {
             log.error("Error occurred while updating trip statuses: {}", e.getMessage(), e);

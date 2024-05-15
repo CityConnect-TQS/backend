@@ -2,6 +2,8 @@ package pt.ua.deti.tqs.backend.integrations;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+
+import org.apache.commons.exec.ExecuteException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,12 +11,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompHeaders;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import static org.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -26,13 +41,22 @@ import pt.ua.deti.tqs.backend.repositories.CityRepository;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
 
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -58,6 +82,8 @@ class TripControllerTestIT {
     @Autowired
     private CityRepository cityRepository;
 
+    private WebSocketStompClient webSocketStompClient;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -68,6 +94,8 @@ class TripControllerTestIT {
     @BeforeEach
     void setBASE_URL() {
         BASE_URL = "http://localhost:" + randomServerPort;
+        this.webSocketStompClient = new WebSocketStompClient(new SockJsClient(
+            List.of(new WebSocketTransport(new StandardWebSocketClient()))));
     }
 
     @AfterEach
@@ -484,6 +512,48 @@ class TripControllerTestIT {
            });
     }
 
+    @Test
+    void whenScheduledSignageUpdateRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+        
+        Trip trip1 = createTripForStatusTesting(5, TripStatus.ONTIME, 0);
+        Trip trip2 = createTripForStatusTesting(15, TripStatus.ONTIME, 0);
+        Trip trip3 = createTripForStatusTesting(25, TripStatus.ONTIME, 0);
+        Trip trip4 = createTripForStatusTesting(35, TripStatus.ONTIME, 0);
+        Trip trip5 = createTripForStatusTesting(45, TripStatus.ONTIME, 0);
+        Trip trip6 = createTripForStatusTesting(55, TripStatus.ONTIME, 0);
+        Trip trip7 = createTripForStatusTesting(65, TripStatus.ONTIME, 0);
+
+        BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
+
+        webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+         
+        StompSession session = webSocketStompClient.connectAsync(BASE_URL + "/api/public/ws", new StompSessionHandlerAdapter() {
+        }).get(1, SECONDS);
+        
+        session.subscribe("/signage/cities/" + city.getId() + "/departure" , new StompFrameHandler() {
+        
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                // Use a TypeReference to indicate that the payload is a list of Trip objects
+                return new TypeReference<List<Trip>>() {}.getType();
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                // Add the received list of Trip objects to the blocking queue
+                blockingQueue.add((List<Trip>) payload);
+            }
+        });
+                
+        await()
+            .atMost(10, TimeUnit.SECONDS)
+            .untilAsserted(() -> {
+                List<Trip> receivedTrips = blockingQueue.poll();
+                assertThat(receivedTrips).isNotNull();
+            });
+    }
+
+   
     private Trip createTripForStatusTesting(Integer departureMinutes, TripStatus status, Integer delay) {
         Trip trip = createTestTrip();
         trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));
@@ -496,13 +566,15 @@ class TripControllerTestIT {
         return createTestTrip("Aveiro", "Aveiro");
     }
 
+    City city;
+
     private Trip createTestTrip(String departure, String arrival) {
         Bus bus = new Bus();
         bus.setCapacity(48);
         bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
-        City city = new City();
+        city = new City();
         city.setName(departure);
         city = cityRepository.saveAndFlush(city);
 
