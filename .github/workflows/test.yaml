@@ -46,7 +46,7 @@ jobs:
           CURRENCY_API_KEY: ${{ secrets.CURRENCY_API_KEY }}
         run: |
           SPRING_APPLICATION_JSON='{"currencyapi.apikey":"${CURRENCY_API_KEY}"}' \
-          mvn -B '-Dtest=!pt.ua.deti.tqs.backend.functional.**.*' verify failsafe:integration-test sonar:sonar \
+          mvn -B '-Dtest=!pt.ua.deti.tqs.backend.functional.**' verify failsafe:integration-test sonar:sonar \
           -Dsonar.projectKey=CityConnect-TQS_backend
 
       - name: Publish results to Xray
