@@ -58,6 +58,8 @@ class ReservationControllerTestIT {
     @Autowired
     private UserRepository userRepository;
 
+    private String jwtToken;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -66,8 +68,20 @@ class ReservationControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
     }
 
     @AfterEach

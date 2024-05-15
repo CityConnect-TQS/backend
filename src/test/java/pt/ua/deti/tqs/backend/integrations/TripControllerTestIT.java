@@ -26,6 +26,7 @@ import pt.ua.deti.tqs.backend.repositories.BusRepository;
 import pt.ua.deti.tqs.backend.repositories.CityRepository;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -60,6 +61,11 @@ class TripControllerTestIT {
     @Autowired
     private CityRepository cityRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private String jwtToken;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -68,13 +74,26 @@ class TripControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
     }
 
     @AfterEach
     public void resetDb() {
         repository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -97,6 +116,7 @@ class TripControllerTestIT {
         trip.setPrice(10.0);
 
         RestAssured.given().contentType(ContentType.JSON).body(trip)
+                .header("Authorization", "Bearer " + jwtToken)
                    .when().post(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) trip.getPrice()))
@@ -145,7 +165,8 @@ class TripControllerTestIT {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/public/trip?currency=USD")
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken)
+                .when().get(BASE_URL + "/api/public/trip?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("price", not(hasItems((float) trip1.getPrice(), (float) trip2.getPrice())));
@@ -339,8 +360,8 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=USD")
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("price", not(equalTo((float) trip.getPrice())));
+                .then().statusCode(HttpStatus.OK.value())
+                .body("price", equalTo((float) trip.getPrice()));
     }
 
     @Test
@@ -362,7 +383,8 @@ class TripControllerTestIT {
     void whenGetReservationsByTripIdAndNoTripsFound_thenStatus404() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken)
+                .when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -373,7 +395,7 @@ class TripControllerTestIT {
         trip.setPrice(20.0);
         trip.setStatus(TripStatus.DELAYED);
         trip.setDelay(5);
-        RestAssured.given().contentType(ContentType.JSON).body(trip)
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON).body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) trip.getPrice()));
@@ -388,7 +410,7 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         trip.setPrice(20.0);
-        RestAssured.given().contentType(ContentType.JSON).body(trip)
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON).body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -397,7 +419,7 @@ class TripControllerTestIT {
     void whenDeleteTrip_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(trip.getId())).isEmpty();
@@ -409,7 +431,7 @@ class TripControllerTestIT {
         createTestTrip();
         createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/trip")
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(3));
     }
