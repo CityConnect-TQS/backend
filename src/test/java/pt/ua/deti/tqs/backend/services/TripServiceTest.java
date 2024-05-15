@@ -34,9 +34,11 @@ class TripServiceTest {
     @InjectMocks
     private TripService tripService;
 
+    City city1; 
+
     @BeforeEach
     public void setUp() {
-        City city1 = new City();
+        city1 = new City();
         city1.setId(1L);
         city1.setName("Aveiro");
 
