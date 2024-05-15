@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    types: [ opened, synchronize, reopened ]
   workflow_dispatch:
 
 jobs:
@@ -14,8 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions: read-all
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          repository: CityConnect-TQS/control-room
+          token: ${{ secrets.PRIVATE_TOKEN }}
+          submodules: recursive
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -52,7 +54,9 @@ jobs:
         run: docker compose -f compose.prod.yaml up -d --build
 
       - name: Build and test using Selenium
-        run: mvn -B '-Dtest=pt.ua.deti.tqs.backend.functional.**' test
+        run: |
+          cd backend
+          mvn -B '-Dtest=pt.ua.deti.tqs.backend.functional.**' test
 
       - name: Down containers
         run: |
