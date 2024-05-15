@@ -21,7 +21,7 @@ public class CheckTripsSteps {
     @When("I navigate to {string}")
     public void iNavigateTo(String url) {
         FirefoxOptions options = new FirefoxOptions();
-        //options.addArguments("-headless");
+        options.addArguments("-headless");
 
         driver = new FirefoxDriver(options);
         driver.get(url);
@@ -54,7 +54,6 @@ public class CheckTripsSteps {
     public void iSearchForTrips() throws InterruptedException {
         driver.findElement(By.id("searchBtn")).click();
     }
-
 
     @Then("I should see a list of trips on date {string} or after this date")
     public void iShouldSeeAListOfTripsOnDate(String date) {
