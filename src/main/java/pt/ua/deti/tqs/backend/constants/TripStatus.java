@@ -4,5 +4,6 @@ public enum TripStatus {
     ONTIME,
     DELAYED,
     ONBOARDING,
-    DEPARTED
+    DEPARTED,
+    ARRIVED
 }

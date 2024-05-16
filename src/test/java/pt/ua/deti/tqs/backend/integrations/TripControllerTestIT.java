@@ -2,6 +2,8 @@ package pt.ua.deti.tqs.backend.integrations;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+
+import org.apache.commons.exec.ExecuteException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,12 +12,25 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.StringMessageConverter;
+import org.springframework.messaging.simp.stomp.StompFrameHandler;
+import org.springframework.messaging.simp.stomp.StompHeaders;
+import org.springframework.messaging.simp.stomp.StompSession;
+import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.messaging.WebSocketStompClient;
+import org.springframework.web.socket.sockjs.client.SockJsClient;
+import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import static org.awaitility.Awaitility.await;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -28,13 +43,22 @@ import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
 import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -61,6 +85,8 @@ class TripControllerTestIT {
     @Autowired
     private CityRepository cityRepository;
 
+    private WebSocketStompClient webSocketStompClient;
+
     @Autowired
     private UserRepository userRepository;
 
@@ -76,6 +102,8 @@ class TripControllerTestIT {
     @BeforeEach
     public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
+        this.webSocketStompClient = new WebSocketStompClient(new SockJsClient(
+            List.of(new WebSocketTransport(new StandardWebSocketClient()))));
 
         String body = "{\"password\":\"" + "password" +
                 "\",\"name\":\"" + "name" +
@@ -437,7 +465,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(5, TripStatus.ONTIME, 0);
+        Trip trip = createTripForStatusTesting(5, 60, TripStatus.ONTIME, 0);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -449,7 +477,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnTimeTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(11, TripStatus.ONTIME, 0);
+        Trip trip = createTripForStatusTesting(11, 60, TripStatus.ONTIME, 0);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -461,7 +489,7 @@ class TripControllerTestIT {
 
     @Test
     void givenDelayedTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(3, TripStatus.DELAYED, 5);
+        Trip trip = createTripForStatusTesting(3, 60, TripStatus.DELAYED, 5);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -473,7 +501,7 @@ class TripControllerTestIT {
 
     @Test
     void givenDelayedTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(5, TripStatus.DELAYED, 11);
+        Trip trip = createTripForStatusTesting(5, 60, TripStatus.DELAYED, 11);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -485,7 +513,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnboardingTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(0, TripStatus.ONBOARDING, 0);
+        Trip trip = createTripForStatusTesting(0, 60, TripStatus.ONBOARDING, 0);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -497,7 +525,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnboardingDelayredTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(-5, TripStatus.ONBOARDING, 5);
+        Trip trip = createTripForStatusTesting(-5, 60, TripStatus.ONBOARDING, 5);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -507,9 +535,127 @@ class TripControllerTestIT {
            });
     }
 
-    private Trip createTripForStatusTesting(Integer departureMinutes, TripStatus status, Integer delay) {
+    @Test
+    void givenDepartedTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(-60, 0, TripStatus.DEPARTED, 0);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ARRIVED"));
+           });
+    }
+
+    @Test
+    void givenDepartedDelayredTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(-65, -5, TripStatus.DEPARTED, 5);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ARRIVED"));
+           });
+    }
+
+    @Test
+    void whenScheduledSignageUpdateDepartureRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+
+        City city = createTestCity("Aveiro");
+        City city2 = createTestCity("Porto");
+        createTripForSignageUpdateTesting(city, city2, 5, 60);
+        createTripForSignageUpdateTesting(city2, city, 10, 60);
+        createTripForSignageUpdateTesting(city, city2, 15, 60);
+
+        BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
+
+        webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+
+        StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
+        }).get(1, SECONDS);
+
+        session.subscribe("/signage/cities/" + city.getId() + "/departure" , new StompFrameHandler() {
+
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return new TypeReference<List<Trip>>() {}.getType();
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                blockingQueue.add((List<Trip>) payload);
+            }
+        });
+
+        await()
+            .atMost(30, TimeUnit.SECONDS)
+            .untilAsserted(() -> {
+                List<Trip> receivedTrips = blockingQueue.poll();
+                assertThat(receivedTrips).isNotNull()
+                                         .hasSize(2);
+                });
+    }
+
+    @Test
+    void whenScheduledSignageUpdateArrivalRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+
+        City city = createTestCity("Aveiro");
+        City city2 = createTestCity("Porto");
+        createTripForSignageUpdateTesting(city, city2, 5, 10);
+        createTripForSignageUpdateTesting(city2, city, 5, 15);
+        createTripForSignageUpdateTesting(city, city2, 5, 30);
+
+        BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
+
+        webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+
+        StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
+        }).get(1, SECONDS);
+
+        session.subscribe("/signage/cities/" + city2.getId() + "/arrival" , new StompFrameHandler() {
+
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return new TypeReference<List<Trip>>() {}.getType();
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                blockingQueue.add((List<Trip>) payload);
+            }
+        });
+
+        await()
+            .atMost(30, TimeUnit.SECONDS)
+            .untilAsserted(() -> {
+                List<Trip> receivedTrips = blockingQueue.poll();
+                assertThat(receivedTrips).isNotNull()
+                                         .hasSize(2);
+                });
+    }
+
+    private Trip createTripForSignageUpdateTesting(City departure, City arrival, Integer departureMinutes, Integer arrivalMinutes) {
+        Bus bus = new Bus();
+        bus.setCapacity(48);
+        bus.setCompany("FlixBus");
+        bus = busRepository.saveAndFlush(bus);
+
+        Trip trip = new Trip();
+        trip.setDeparture(departure);
+        trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setArrival(arrival);
+        trip.setArrivalTime(LocalDateTime.now().plusHours(arrivalMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setBus(bus);
+        trip.setPrice(10.0);
+        trip.setFreeSeats(48);
+        return repository.saveAndFlush(trip);
+    }
+
+    private Trip createTripForStatusTesting(Integer departureMinutes, Integer arrivalMinutes, TripStatus status, Integer delay) {
         Trip trip = createTestTrip();
         trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setArrivalTime(LocalDateTime.now().plusMinutes(arrivalMinutes).truncatedTo(ChronoUnit.SECONDS));
         trip.setStatus(status);
         trip.setDelay(delay);
         return repository.saveAndFlush(trip);
@@ -525,13 +671,8 @@ class TripControllerTestIT {
         bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
-        City city = new City();
-        city.setName(departure);
-        city = cityRepository.saveAndFlush(city);
-
-        City city2 = new City();
-        city2.setName(arrival);
-        city2 = cityRepository.saveAndFlush(city2);
+        City city = createTestCity(arrival);
+        City city2 = createTestCity(departure);
 
         Trip trip = new Trip();
         trip.setDeparture(city);
@@ -542,5 +683,11 @@ class TripControllerTestIT {
         trip.setPrice(10.0);
         trip.setFreeSeats(48);
         return repository.saveAndFlush(trip);
+    }
+
+    private City createTestCity(String name) {
+        City city = new City();
+        city.setName(name);
+        return cityRepository.saveAndFlush(city);
     }
 }
