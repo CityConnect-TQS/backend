@@ -58,6 +58,7 @@ public class AuthConfig {
             .authorizeHttpRequests(
                     auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/backoffice/user/**").permitAll()
+                                .requestMatchers("/api/public/ws/**").permitAll()
 
                                 .requestMatchers("/api/public/user/{id}/**")
                                 .access((authentication, context) -> new AuthorizationDecision(
