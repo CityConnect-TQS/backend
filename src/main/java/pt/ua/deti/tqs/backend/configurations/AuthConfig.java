@@ -120,6 +120,7 @@ public class AuthConfig {
         configuration.addAllowedOrigin("http://staff.localhost");
         configuration.addAllowedOrigin("http://digital.localhost");
         configuration.addAllowedOrigin("http://localhost");
+        configuration.setAllowCredentials(true);
         configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(
                 Arrays.asList("X-Requested-With", "Cache-Control", "Cookie", "Origin", "Content-Type", "Accept",
