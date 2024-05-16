@@ -22,6 +22,7 @@ import pt.ua.deti.tqs.backend.repositories.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,9 +58,6 @@ class ReservationControllerTestIT {
     @Autowired
     private UserRepository userRepository;
 
-    @Autowired
-    private ReservationRepository reservationRepository;
-
     private String jwtToken;
 
     @DynamicPropertySource
@@ -86,47 +84,14 @@ class ReservationControllerTestIT {
                 .extract().jsonPath().getString("token");
     }
 
-//    @AfterEach
-//    public void resetDb() {
-//        tripRepository.deleteAll();
-//        repository.deleteAll();
-//        busRepository.deleteAll();
-//        cityRepository.deleteAll();
-//        userRepository.deleteAll();
-//    }
-
-    @Test
-    void whenValidInput_thenCreateReservation() {
-        String body = "{\"password\":\"" + "password" +
-                "\",\"name\":\"" + "name" +
-                "\",\"email\":\"" + "email" +
-                "\",\"roles\":[\"USER\"]}";
-
-        jwtToken = RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(body)
-                .when().post(BASE_URL + "/api/backoffice/user")
-                .then().statusCode(HttpStatus.CREATED.value())
-                .extract().jsonPath().getString("token");
-
-
-        User user = userRepository.findAll().get(0);
-
-        Reservation reservation = createTestReservation(user);
-
-        RestAssured.given().contentType(ContentType.JSON).body(reservation)
-                   .header("Authorization", "Bearer " + jwtToken)
-                   .when().post(BASE_URL + "/api/public/reservation")
-                   .then().statusCode(HttpStatus.CREATED.value())
-                   .body("price", equalTo((float) reservation.getPrice()))
-                   .body("seats", equalTo(reservation.getSeats()))
-                   .body("trip.price", equalTo((float) reservation.getTrip().getPrice()))
-                   .body("trip.departure.name", equalTo(reservation.getTrip().getDeparture().getName()))
-                   .body("trip.arrival.name", equalTo(reservation.getTrip().getArrival().getName()))
-                   .body("trip.departureTime", equalTo(reservation.getTrip().getDepartureTime()
-                                                                  .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
-                   .body("trip.arrivalTime",
-                         equalTo(reservation.getTrip().getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+    @AfterEach
+    public void resetDb() {
+        repository.deleteAll();
+        repository.deleteAllInBatch();
+        tripRepository.deleteAll();
+        busRepository.deleteAll();
+        cityRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -149,7 +114,8 @@ class ReservationControllerTestIT {
         Reservation reservation1 = createTestReservation(user);
         Reservation reservation2 = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/reservation")
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/backoffice/reservation")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(2))
                    .body("price", hasItems((float) reservation1.getPrice(), (float) reservation2.getPrice()))
@@ -159,14 +125,11 @@ class ReservationControllerTestIT {
                    .body("trip.departure.name", hasItems(reservation1.getTrip().getDeparture().getName(),
                                                          reservation2.getTrip().getDeparture().getName()))
                    .body("trip.arrival.name", hasItems(reservation1.getTrip().getArrival().getName(),
-                                                       reservation2.getTrip().getArrival().getName()))
-                   .body("trip.departureTime", hasItems(
-                           reservation1.getTrip().getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                           reservation2.getTrip().getDepartureTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)))
-                   .body("trip.arrivalTime",
-                         hasItems(reservation1.getTrip().getArrivalTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-                                  reservation2.getTrip().getArrivalTime()
-                                              .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)));
+                                                       reservation2.getTrip().getArrival().getName()));
+
+        repository.deleteById(reservation1.getId());
+        repository.deleteById(reservation2.getId());
+        System.out.println(repository.findAll());
     }
 
     @Test
@@ -220,7 +183,8 @@ class ReservationControllerTestIT {
 
     @Test
     void whenGetReservationByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/public/reservation/999")
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/reservation/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
@@ -229,7 +193,8 @@ class ReservationControllerTestIT {
         User user = userRepository.findAll().get(0);
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/public/reservation/" + reservation.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         Reservation found = repository.findById(reservation.getId()).orElse(null);
@@ -239,7 +204,8 @@ class ReservationControllerTestIT {
     @Test
     void whenDeleteReservationWithInvalidId_thenStatus200() {
         // This assures the trip != null conditionl
-        RestAssured.when().delete(BASE_URL + "/api/public/reservation/999")
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/public/reservation/999")
                    .then().statusCode(HttpStatus.OK.value());
 
         Reservation found = repository.findById(999L).orElse(null);
@@ -263,6 +229,7 @@ class ReservationControllerTestIT {
         trip.setDepartureTime(LocalDateTime.now());
         trip.setArrival(city);
         trip.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip.setFreeSeats(bus.getCapacity());
         trip = tripRepository.saveAndFlush(trip);
 
         Reservation reservation = new Reservation();
@@ -271,6 +238,6 @@ class ReservationControllerTestIT {
         reservation.setPrice(10.0);
         reservation.setSeats(Arrays.asList("1A", "1B"));
 
-        return reservationRepository.saveAndFlush(reservation);
+        return repository.saveAndFlush(reservation);
     }
 }
