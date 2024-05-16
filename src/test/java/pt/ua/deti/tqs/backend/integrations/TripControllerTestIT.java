@@ -197,7 +197,7 @@ class TripControllerTestIT {
         RestAssured.given()
                 .header("Authorization", "Bearer " + jwtToken)
                 .when().get(BASE_URL + "/api/public/trip?currency=USD")
-                   .then().statusCode(HttpStatus.UNAUTHORIZED.value());
+                   .then().statusCode(HttpStatus.OK.value());
     }
 
     @Test
@@ -388,7 +388,7 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=USD")
-                .then().statusCode(HttpStatus.UNAUTHORIZED.value());
+                .then().statusCode(HttpStatus.OK.value());
     }
 
     @Test
