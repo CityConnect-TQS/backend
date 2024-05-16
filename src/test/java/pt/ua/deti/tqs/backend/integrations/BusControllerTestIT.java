@@ -17,6 +17,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.repositories.BusRepository;
+import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
 import java.util.List;
 
@@ -41,6 +42,11 @@ class BusControllerTestIT {
     @Autowired
     private BusRepository repository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private String jwtToken;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -49,13 +55,27 @@ class BusControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
     }
+
 
     @AfterEach
     public void resetDb() {
         repository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -64,11 +84,15 @@ class BusControllerTestIT {
         bus.setCapacity(50);
         bus.setCompany("Flexibus");
 
-        RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().post(BASE_URL + "/api/backoffice/bus")
-                   .then().statusCode(HttpStatus.CREATED.value())
-                   .body("capacity", equalTo(bus.getCapacity()))
-                   .body("company", equalTo(bus.getCompany()));
+        RestAssured.given()
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .body(bus)
+                .when().post(BASE_URL + "/api/backoffice/bus")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .body("capacity", equalTo(bus.getCapacity()))
+                .body("company", equalTo(bus.getCompany()));
+
 
         List<Bus> found = repository.findAll();
         assertThat(found).extracting(Bus::getCapacity).containsOnly(bus.getCapacity());
@@ -108,20 +132,23 @@ class BusControllerTestIT {
 
         bus.setCapacity(60);
         RestAssured.given().contentType(ContentType.JSON).body(bus)
-                   .when().put(BASE_URL + "/api/backoffice/bus/" + bus.getId())
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("capacity", equalTo(bus.getCapacity()))
-                   .body("company", equalTo(bus.getCompany()));
+                .header("Authorization", "Bearer " + jwtToken)
+                .when().put(BASE_URL + "/api/backoffice/bus/" + bus.getId())
+                .then().statusCode(HttpStatus.OK.value())
+                .body("capacity", equalTo(bus.getCapacity()))
+                .body("company", equalTo(bus.getCompany()));
 
         Bus updatedBus = repository.findById(bus.getId()).orElse(null);
         assertThat(updatedBus).isNotNull().extracting(Bus::getCapacity).isEqualTo(60);
     }
 
+
     @Test
     void whenUpdateInvalidBus_thenStatus404() {
         Bus bus = createTestBus(50, "Flexibus");
 
-        RestAssured.given().contentType(ContentType.JSON).body(bus)
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).body(bus)
                    .when().put(BASE_URL + "/api/backoffice/bus/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -130,11 +157,13 @@ class BusControllerTestIT {
     void whenDeleteBus_thenStatus200() {
         Bus bus = createTestBus(50, "Flexibus");
 
-        RestAssured.when().delete(BASE_URL + "/api/backoffice/bus/" + bus.getId())
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken)
+                   .when().delete(BASE_URL + "/api/backoffice/bus/" + bus.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(bus.getId())).isEmpty();
     }
+
 
     private Bus createTestBus(int capacity, String company) {
         Bus bus = new Bus();
@@ -143,4 +172,5 @@ class BusControllerTestIT {
         repository.saveAndFlush(bus);
         return bus;
     }
+
 }

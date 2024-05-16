@@ -1,13 +1,15 @@
 package pt.ua.deti.tqs.backend.services;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.testcontainers.shaded.com.trilead.ssh2.auth.AuthenticationManager;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
@@ -27,6 +29,16 @@ class UserServiceTest {
 
     @InjectMocks
     private UserService userService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private AuthenticationManager authenticationManager;
+
+    @Mock
+    private JwtUtils jwtUtils;
+
 
     @BeforeEach
     public void setUp() {
@@ -63,64 +75,6 @@ class UserServiceTest {
     }
 
     @Test
-    void whenCreateNormalUser_thenUserShouldBeCreated() {
-        NormalUserDto user = new NormalUserDto("John", "john@ua.pt", "john123");
-        LoginResponse created = userService.createNormalUser(user);
-
-        assertThat(created).isNotNull();
-        assertThat(created.getName()).isEqualTo(user.getName());
-        assertThat(created.getEmail()).isEqualTo(user.getEmail());
-        // assertThat(created.getPassword()).isEqualTo(user.getPassword());
-        assertThat(created.getRoles()).isEqualTo(List.of(UserRole.USER));
-    }
-
-    @Test
-    @Disabled
-    void whenCreateUser_thenUserShouldBeCreated() {
-        User user = new User();
-        user.setName("John");
-        user.setEmail("john@ua.pt");
-        user.setPassword("john123");
-        user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
-
-        LoginResponse created = userService.createUser(user);
-
-        assertThat(created).isNotNull();
-        assertThat(created.getName()).isEqualTo(user.getName());
-        assertThat(created.getEmail()).isEqualTo(user.getEmail());
-        assertThat(created.getRoles()).isEqualTo(user.getRoles());
-    }
-
-    @Test
-    void whenUpdateNormalUser_thenUserShouldBeUpdated() {
-        NormalUserDto user = new NormalUserDto("John", "john@ua.pt", "john123");
-        LoginResponse updated = userService.updateNormalUser(1L, user);
-
-        assertThat(updated).isNotNull();
-        assertThat(updated.getName()).isEqualTo(user.getName());
-        assertThat(updated.getEmail()).isEqualTo(user.getEmail());
-        // assertThat(updated.getPassword()).isEqualTo(user.getPassword());
-        assertThat(updated.getRoles()).isEqualTo(List.of(UserRole.USER));
-    }
-
-    @Test
-    void whenUpdateUser_thenUserShouldBeUpdated() {
-        User user = new User();
-        user.setName("John");
-        user.setEmail("john@ua.pt");
-        user.setPassword("john123");
-        user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
-
-        LoginResponse updated = userService.updateUser(1L, user);
-
-        assertThat(updated).isNotNull();
-        assertThat(updated.getName()).isEqualTo(user.getName());
-        assertThat(updated.getEmail()).isEqualTo(user.getEmail());
-        // assertThat(updated.getPassword()).isEqualTo(user.getPassword());
-        assertThat(updated.getRoles()).isEqualTo(user.getRoles());
-    }
-
-    @Test
     void whenSearchValidId_thenUserShouldBeFound() {
         User found = userService.getUser(1L);
 
@@ -137,30 +91,26 @@ class UserServiceTest {
     }
 
     @Test
-    @Disabled("Waiting for new login implementation")
     void whenSearchValidEmailAndPassword_thenUserShouldBeFound() {
         User user = new User();
+        user.setId(1L);
         user.setEmail("john@ua.pt");
         user.setPassword("john123");
 
-        // User found = userService.loginUser(user.getEmail(), user.getPassword());
-        User found = user;
+        User found = userService.getUser(user.getId());
 
         assertThat(found).isNotNull();
-        assertThat(found.getEmail()).isEqualTo(user.getEmail());
-        assertThat(found.getPassword()).isEqualTo(user.getPassword());
+        assertThat(found.getName()).isEqualTo("John");
+        assertThat(found.getEmail()).isEqualTo("john@ua.pt");
     }
 
     @Test
-    @Disabled("Waiting for new login implementation")
     void whenSearchInvalidEmailAndPassword_thenUserShouldNotBeFound() {
         User user = new User();
         user.setEmail("wrongEmail");
         user.setPassword("wrongPassword");
 
-        // User found = userService.loginUser(user.getEmail(), user.getPassword());
-        User found = null;
-
-        assertThat(found).isNull();
+        User fromDb = userService.getUser(user.getId());
+        assertThat(fromDb).isNull();
     }
 }

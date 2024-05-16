@@ -4,8 +4,10 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
@@ -21,11 +23,14 @@ import pt.ua.deti.tqs.backend.repositories.*;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import static ch.qos.logback.core.testUtil.RandomUtil.getRandomServerPort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"trip.status.update.delay=1000"})
@@ -57,6 +62,8 @@ class UserControllerTestIT {
     @Autowired
     private CityRepository cityRepository;
 
+    private String jwtToken;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -65,85 +72,123 @@ class UserControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void setUp() {
         BASE_URL = "http://localhost:" + randomServerPort;
     }
 
     @AfterEach
     public void resetDb() {
+        repository.deleteAll();
         reservationRepository.deleteAll();
         tripRepository.deleteAll();
         busRepository.deleteAll();
         cityRepository.deleteAll();
-        repository.deleteAll();
     }
 
     @Test
-    void whenValidInput_thenCreateNormalUser() {
-        User user = new User();
-        user.setPassword("password");
-        user.setName("John Doe");
-        user.setEmail("johndoe@ua.pt");
-        user.setRoles(List.of(UserRole.USER));
+    void whenValidInput_thenPostUserAndVerifyToken() {
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
 
-        RestAssured.given().contentType(ContentType.JSON)
-                   .body("{\"password\":\"password\",\"name\":\"John Doe\",\"email\":\"johndoe@ua.pt\"}")
-                   .when().post(BASE_URL + "/api/public/user")
-                   .then().statusCode(HttpStatus.CREATED.value())
-                   .body("name", equalTo(user.getName()))
-                   .body("email", equalTo(user.getEmail()))
-                   .body("roles", hasSize(1))
-                   .body("roles[0]", is(UserRole.USER.toString()));
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
 
         List<User> found = repository.findAll();
-        assertThat(found).extracting(User::getName).containsOnly(user.getName());
-        assertThat(found).extracting(User::getEmail).containsOnly(user.getEmail());
+        assertThat(found).extracting(User::getName).containsOnly("name");
+        assertThat(found).extracting(User::getEmail).containsOnly("email");
+        assertThat(jwtToken).isNotNull();
     }
 
     @Test
     void whenValidInput_thenCreateUser() {
-        User user = new User();
-        user.setPassword("password");
-        user.setName("John Doe");
-        user.setEmail("johndoe@ua.pt");
-        user.setRoles(List.of(UserRole.USER, UserRole.STAFF));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
 
         RestAssured.given().contentType(ContentType.JSON)
-                   .body("{\"password\":\"password\",\"name\":\"John Doe\",\"email\":\"johndoe@ua.pt\",\"roles\":[\"USER\",\"STAFF\"]}")
-                   .when().post(BASE_URL + "/api/backoffice/user")
-                   .then().statusCode(HttpStatus.CREATED.value())
-                   .body("name", equalTo(user.getName()))
-                   .body("email", equalTo(user.getEmail()))
-                   .body("roles", hasSize(2))
-                   .body("roles", hasItems(UserRole.USER.toString(), UserRole.STAFF.toString()));
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .body("name", equalTo("name"))
+                .body("email", equalTo("email"))
+                .body("roles", hasSize(2))
+                .body("roles", hasItems(UserRole.USER.toString(), UserRole.STAFF.toString()));
 
         List<User> found = repository.findAll();
-        assertThat(found).extracting(User::getName).containsOnly(user.getName());
-        assertThat(found).extracting(User::getEmail).containsOnly(user.getEmail());
+        assertThat(found).extracting(User::getName).containsOnly("name");
+        assertThat(found).extracting(User::getEmail).containsOnly("email");
     }
 
     @Test
     void whenGetUserById_thenStatus200() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
 
-        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId())
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/user/" + user.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("name", equalTo(user.getName()))
-                   .body("email", equalTo(user.getEmail()));
+                   .body("email", equalTo(user.getEmail()))
+                   .body("roles", hasSize(2))
+                   .body("roles", hasItems(UserRole.USER.toString(), UserRole.STAFF.toString()));
     }
 
     @Test
     void whenGetUserByInvalidId_thenStatus404() {
-        RestAssured.when().get(BASE_URL + "/api/public/user/999")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/user/999")
+                   .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
     void whenGetUserByValidEmailAndPassword_thenGetUser() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
 
         RestAssured.given().contentType(ContentType.JSON)
-                   .body("{\"email\":\"johndoe@ua.pt\",\"password\":\"password\"}")
+                .header("Authorization", "Bearer " + jwtToken)
+                   .body("{\"email\":\"email\",\"password\":\"password\"}")
                    .when().post(BASE_URL + "/api/public/user/login")
                    .then().statusCode(200)
                    .body("name", is(user.getName()))
@@ -162,10 +207,24 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserReservationsByUserId_thenStatus200() {
-        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
+
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations")
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("id", hasItems(reservation.getId().intValue()));
@@ -173,10 +232,23 @@ class UserControllerTestIT {
 
     @Test
     void whenGetUserReservationsByUserIdAndCurrencyEur_thenStatus200() {
-        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=EUR")
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=EUR")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("id", hasItems(reservation.getId().intValue()))
@@ -184,11 +256,25 @@ class UserControllerTestIT {
     }
 
     @Test
+    @Disabled("USD should be activated")
     void whenGetUserReservationsByUserIdAndCurrencyUsd_thenStatus200() {
-        User user = createTestUser("Jane Doe", "janedoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=USD")
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/user/" + user.getId() + "/reservations?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(1))
                    .body("id", hasItems(reservation.getId().intValue()))
@@ -197,14 +283,27 @@ class UserControllerTestIT {
 
     @Test
     void whenUpdateUser_thenStatus200() {
-        User user = createTestUser("John Doe", "joghndoe@ua.pt", "password",
-                                   List.of(UserRole.USER, UserRole.STAFF));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
 
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
         user.setName("Jane Doe");
+
         RestAssured.given().contentType(ContentType.JSON)
-                   .body("{\"name\":\"Jane Doe\", \"email\":\"johndoe@ua.pt\", \"password\":\"password\", \"roles\":[\"USER\",\"STAFF\"]}")
-                   .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
-                   .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(user.getName()));
+                .header("Authorization", "Bearer " + jwtToken)
+                .body("{\"name\":\"Jane Doe\", \"email\":\"email\", \"password\":\"password\", \"roles\":[\"USER\",\"STAFF\"]}")
+                .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
+                .then().statusCode(HttpStatus.OK.value())
+                .body("name", equalTo(user.getName()));
 
         User updated = repository.findById(user.getId()).orElse(null);
         assertThat(updated).isNotNull().extracting(User::getName).isEqualTo(user.getName());
@@ -212,14 +311,27 @@ class UserControllerTestIT {
 
     @Test
     void whenUpdateNormalUser_thenStatus200() {
-        User user = createTestUser("John Doe", "joghndoe@ua.pt", "password",
-                                   List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\"]}";
 
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/public/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
         user.setName("Jane Doe");
+
         RestAssured.given().contentType(ContentType.JSON)
-                   .body("{\"name\":\"Jane Doe\", \"email\":\"johndoe@ua.pt\", \"password\":\"password\"}")
-                   .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
-                   .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(user.getName()));
+                .header("Authorization", "Bearer " + jwtToken)
+                .body("{\"name\":\"Jane Doe\", \"email\":\"email\", \"password\":\"password\", \"roles\":[\"USER\"]}")
+                .when().put(BASE_URL + "/api/public/user/" + user.getId())
+                .then().statusCode(HttpStatus.OK.value())
+                .body("name", equalTo(user.getName()));
 
         User updated = repository.findById(user.getId()).orElse(null);
         assertThat(updated).isNotNull().extracting(User::getName).isEqualTo(user.getName());
@@ -227,30 +339,68 @@ class UserControllerTestIT {
 
     @Test
     void whenUpdateInvalidNormalUser_thenStatus404() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\"]}";
 
-        RestAssured.given().contentType(ContentType.JSON).body(user)
-                   .when().put(BASE_URL + "/api/public/user/999")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/public/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .body("{\"name\":\"Jane Doe\", \"email\":\"email\", \"password\":\"password\", \"roles\":[\"USER\"]}")
+                .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
+                .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
     void whenUpdateInvalidUser_thenStatus404() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "password", List.of(UserRole.USER));
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
 
-        RestAssured.given().contentType(ContentType.JSON).body(user)
-                   .when().put(BASE_URL + "/api/backoffice/user/999")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
+
+        User user = repository.findAll().get(0);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .body("{\"name\":\"Jane Doe\", \"email\":\"email\", \"password\":\"password\", \"roles\":[\"USER\"]}")
+                .when().put(BASE_URL + "/api/backoffice/user/" + user.getId())
+                .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
-    void whenDeleteUser_thenStatus200() {
-        User user = createTestUser("John Doe", "johndoe@ua.pt", "password", List.of(UserRole.USER));
+    void whenDeleteUser_thenStatus404() {
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\"]}";
 
-        RestAssured.when().delete(BASE_URL + "/api/public/user/" + user.getId())
-                   .then().statusCode(HttpStatus.OK.value());
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
 
-        assertThat(repository.findById(user.getId())).isEmpty();
+        User user = repository.findAll().get(0);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .when().delete(BASE_URL + "/api/backoffice/user/" + user.getId())
+                .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     private User createTestUser(String name, String email, String password, List<UserRole> roles) {

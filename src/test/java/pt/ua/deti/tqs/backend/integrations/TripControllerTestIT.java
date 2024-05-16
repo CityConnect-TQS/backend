@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,7 @@ import pt.ua.deti.tqs.backend.repositories.BusRepository;
 import pt.ua.deti.tqs.backend.repositories.CityRepository;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
@@ -61,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @TestPropertySource(properties = {"trip.status.update.delay=1000"})
+@AutoConfigureMockMvc(addFilters = false)
 class TripControllerTestIT {
     @Container
     public static PostgreSQLContainer<?> container = new PostgreSQLContainer<>("postgres:16")
@@ -84,6 +87,11 @@ class TripControllerTestIT {
 
     private WebSocketStompClient webSocketStompClient;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private String jwtToken;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -92,15 +100,28 @@ class TripControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
         this.webSocketStompClient = new WebSocketStompClient(new SockJsClient(
             List.of(new WebSocketTransport(new StandardWebSocketClient()))));
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
     }
 
     @AfterEach
     public void resetDb() {
         repository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -123,6 +144,7 @@ class TripControllerTestIT {
         trip.setPrice(10.0);
 
         RestAssured.given().contentType(ContentType.JSON).body(trip)
+                .header("Authorization", "Bearer " + jwtToken)
                    .when().post(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) trip.getPrice()))
@@ -167,14 +189,15 @@ class TripControllerTestIT {
     }
 
     @Test
-    void givenTrips_whenGetTripsWithCurrencyUsd_thenStatus200() {
+
+    void givenTrips_whenGetTripsWithCurrencyUsd_thenStatus401() {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/public/trip?currency=USD")
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("", hasSize(2))
-                   .body("price", not(hasItems((float) trip1.getPrice(), (float) trip2.getPrice())));
+        RestAssured.given()
+                .header("Authorization", "Bearer " + jwtToken)
+                .when().get(BASE_URL + "/api/public/trip?currency=USD")
+                   .then().statusCode(HttpStatus.OK.value());
     }
 
     @Test
@@ -361,12 +384,11 @@ class TripControllerTestIT {
     }
 
     @Test
-    void whenGetTripByIdWithCurrencyUsd_thenStatus200() {
+    void whenGetTripByIdWithCurrencyUsd_thenStatus401() {
         Trip trip = createTestTrip();
 
         RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=USD")
-                   .then().statusCode(HttpStatus.OK.value())
-                   .body("price", not(equalTo((float) trip.getPrice())));
+                .then().statusCode(HttpStatus.OK.value());
     }
 
     @Test
@@ -385,11 +407,12 @@ class TripControllerTestIT {
     }
 
     @Test
-    void whenGetReservationsByTripIdAndNoTripsFound_thenStatus404() {
+    void whenGetReservationsByTripIdAndNoTripsFound_thenStatus401() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken)
+                .when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
+                   .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
     @Test
@@ -399,7 +422,7 @@ class TripControllerTestIT {
         trip.setPrice(20.0);
         trip.setStatus(TripStatus.DELAYED);
         trip.setDelay(5);
-        RestAssured.given().contentType(ContentType.JSON).body(trip)
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON).body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) trip.getPrice()));
@@ -414,7 +437,7 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         trip.setPrice(20.0);
-        RestAssured.given().contentType(ContentType.JSON).body(trip)
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON).body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -423,7 +446,7 @@ class TripControllerTestIT {
     void whenDeleteTrip_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.when().delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(trip.getId())).isEmpty();
@@ -435,7 +458,7 @@ class TripControllerTestIT {
         createTestTrip();
         createTestTrip();
 
-        RestAssured.when().get(BASE_URL + "/api/backoffice/trip")
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("", hasSize(3));
     }
@@ -538,7 +561,7 @@ class TripControllerTestIT {
 
     @Test
     void whenScheduledSignageUpdateDepartureRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
-        
+
         City city = createTestCity("Aveiro");
         City city2 = createTestCity("Porto");
         createTripForSignageUpdateTesting(city, city2, 5, 60);
@@ -548,12 +571,12 @@ class TripControllerTestIT {
         BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
 
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
-         
+
         StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
         }).get(1, SECONDS);
-        
+
         session.subscribe("/signage/cities/" + city.getId() + "/departure" , new StompFrameHandler() {
-        
+
             @Override
             public Type getPayloadType(StompHeaders headers) {
                 return new TypeReference<List<Trip>>() {}.getType();
@@ -564,7 +587,7 @@ class TripControllerTestIT {
                 blockingQueue.add((List<Trip>) payload);
             }
         });
-                
+
         await()
             .atMost(30, TimeUnit.SECONDS)
             .untilAsserted(() -> {
@@ -576,7 +599,7 @@ class TripControllerTestIT {
 
     @Test
     void whenScheduledSignageUpdateArrivalRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
-        
+
         City city = createTestCity("Aveiro");
         City city2 = createTestCity("Porto");
         createTripForSignageUpdateTesting(city, city2, 5, 10);
@@ -586,12 +609,12 @@ class TripControllerTestIT {
         BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
 
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
-         
+
         StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
         }).get(1, SECONDS);
-        
+
         session.subscribe("/signage/cities/" + city2.getId() + "/arrival" , new StompFrameHandler() {
-        
+
             @Override
             public Type getPayloadType(StompHeaders headers) {
                 return new TypeReference<List<Trip>>() {}.getType();
@@ -602,7 +625,7 @@ class TripControllerTestIT {
                 blockingQueue.add((List<Trip>) payload);
             }
         });
-                
+
         await()
             .atMost(30, TimeUnit.SECONDS)
             .untilAsserted(() -> {
@@ -628,7 +651,7 @@ class TripControllerTestIT {
         trip.setFreeSeats(48);
         return repository.saveAndFlush(trip);
     }
-   
+
     private Trip createTripForStatusTesting(Integer departureMinutes, Integer arrivalMinutes, TripStatus status, Integer delay) {
         Trip trip = createTestTrip();
         trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));

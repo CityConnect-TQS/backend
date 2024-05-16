@@ -24,6 +24,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pt.ua.deti.tqs.backend.components.AuthEntryPointJwt;
 import pt.ua.deti.tqs.backend.components.AuthTokenFilter;
+import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
@@ -70,7 +71,9 @@ public class AuthConfig {
 
                                 .requestMatchers("/api/public/reservation/{id}/**")
                                 .access((authentication, context) -> new AuthorizationDecision(
-                                        checkReservationId(authentication, context.getVariables().get("id"))))
+                                        checkReservationId(authentication, context.getVariables().get("id"))
+                                                || ((User) authentication.get().getPrincipal()).getRoles()
+                                                .contains(UserRole.STAFF)))
 
                                 .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
