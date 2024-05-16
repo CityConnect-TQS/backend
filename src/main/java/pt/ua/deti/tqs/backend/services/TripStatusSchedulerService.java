@@ -2,6 +2,7 @@ package pt.ua.deti.tqs.backend.services;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import jakarta.transaction.Transactional;
@@ -21,6 +22,7 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 @Slf4j
 public class TripStatusSchedulerService {
 
+    @Autowired
     private SimpMessagingTemplate template;
 
     private final TripService tripService;
@@ -44,6 +46,8 @@ public class TripStatusSchedulerService {
             for (City city : allCities) {
                 List<Trip> departureTrips = tripService.getTripsForDigitalSignageDeparture(city);
                 List<Trip> arrivalTrips = tripService.getTripsForDigitalSignageArrival(city);
+                log.info("Sending updates to digital signage for city: {}", city.getName());
+                log.info(departureTrips.size() + " departure trips and " + arrivalTrips.size() + " arrival trips");
                 template.convertAndSend("/signage/cities/" + city.getId() + "/departure", departureTrips);
                 template.convertAndSend("/signage/cities/" + city.getId() + "/arrival", arrivalTrips);
             }

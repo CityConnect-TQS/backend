@@ -513,46 +513,97 @@ class TripControllerTestIT {
     }
 
     @Test
-    void whenScheduledSignageUpdateRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+    void whenScheduledSignageUpdateDepartureRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
         
-        Trip trip1 = createTripForStatusTesting(5, TripStatus.ONTIME, 0);
-        Trip trip2 = createTripForStatusTesting(15, TripStatus.ONTIME, 0);
-        Trip trip3 = createTripForStatusTesting(25, TripStatus.ONTIME, 0);
-        Trip trip4 = createTripForStatusTesting(35, TripStatus.ONTIME, 0);
-        Trip trip5 = createTripForStatusTesting(45, TripStatus.ONTIME, 0);
-        Trip trip6 = createTripForStatusTesting(55, TripStatus.ONTIME, 0);
-        Trip trip7 = createTripForStatusTesting(65, TripStatus.ONTIME, 0);
+        City city = createTestCity("Aveiro");
+        City city2 = createTestCity("Porto");
+        createTripForSignageUpdateTesting(city, city2, 5, 60);
+        createTripForSignageUpdateTesting(city2, city, 10, 60);
+        createTripForSignageUpdateTesting(city, city2, 15, 60);
 
         BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
 
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
          
-        StompSession session = webSocketStompClient.connectAsync(BASE_URL + "/api/public/ws", new StompSessionHandlerAdapter() {
+        StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
         }).get(1, SECONDS);
         
         session.subscribe("/signage/cities/" + city.getId() + "/departure" , new StompFrameHandler() {
         
             @Override
             public Type getPayloadType(StompHeaders headers) {
-                // Use a TypeReference to indicate that the payload is a list of Trip objects
                 return new TypeReference<List<Trip>>() {}.getType();
             }
 
             @Override
             public void handleFrame(StompHeaders headers, Object payload) {
-                // Add the received list of Trip objects to the blocking queue
                 blockingQueue.add((List<Trip>) payload);
             }
         });
                 
         await()
-            .atMost(10, TimeUnit.SECONDS)
+            .atMost(30, TimeUnit.SECONDS)
             .untilAsserted(() -> {
                 List<Trip> receivedTrips = blockingQueue.poll();
-                assertThat(receivedTrips).isNotNull();
-            });
+                assertThat(receivedTrips).isNotNull()
+                                         .hasSize(2);
+                });
     }
 
+    @Test
+    void whenScheduledSignageUpdateArrivalRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+        
+        City city = createTestCity("Aveiro");
+        City city2 = createTestCity("Porto");
+        createTripForSignageUpdateTesting(city, city2, 5, 10);
+        createTripForSignageUpdateTesting(city2, city, 5, 15);
+        createTripForSignageUpdateTesting(city, city2, 5, 30);
+
+        BlockingQueue<List<Trip>> blockingQueue = new ArrayBlockingQueue<>(1);
+
+        webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
+         
+        StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
+        }).get(1, SECONDS);
+        
+        session.subscribe("/signage/cities/" + city2.getId() + "/arrival" , new StompFrameHandler() {
+        
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return new TypeReference<List<Trip>>() {}.getType();
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                blockingQueue.add((List<Trip>) payload);
+            }
+        });
+                
+        await()
+            .atMost(30, TimeUnit.SECONDS)
+            .untilAsserted(() -> {
+                List<Trip> receivedTrips = blockingQueue.poll();
+                assertThat(receivedTrips).isNotNull()
+                                         .hasSize(2);
+                });
+    }
+
+    private Trip createTripForSignageUpdateTesting(City departure, City arrival, Integer departureMinutes, Integer arrivalMinutes) {
+        Bus bus = new Bus();
+        bus.setCapacity(48);
+        bus.setCompany("FlixBus");
+        bus = busRepository.saveAndFlush(bus);
+
+        Trip trip = new Trip();
+        trip.setDeparture(departure);
+        trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setArrival(arrival);
+        trip.setArrivalTime(LocalDateTime.now().plusHours(arrivalMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setBus(bus);
+        trip.setPrice(10.0);
+        trip.setFreeSeats(48);
+        return repository.saveAndFlush(trip);
+    }
    
     private Trip createTripForStatusTesting(Integer departureMinutes, TripStatus status, Integer delay) {
         Trip trip = createTestTrip();
@@ -566,21 +617,14 @@ class TripControllerTestIT {
         return createTestTrip("Aveiro", "Aveiro");
     }
 
-    City city;
-
     private Trip createTestTrip(String departure, String arrival) {
         Bus bus = new Bus();
         bus.setCapacity(48);
         bus.setCompany("FlixBus");
         bus = busRepository.saveAndFlush(bus);
 
-        city = new City();
-        city.setName(departure);
-        city = cityRepository.saveAndFlush(city);
-
-        City city2 = new City();
-        city2.setName(arrival);
-        city2 = cityRepository.saveAndFlush(city2);
+        City city = createTestCity(arrival);
+        City city2 = createTestCity(departure);
 
         Trip trip = new Trip();
         trip.setDeparture(city);
@@ -591,5 +635,11 @@ class TripControllerTestIT {
         trip.setPrice(10.0);
         trip.setFreeSeats(48);
         return repository.saveAndFlush(trip);
+    }
+
+    private City createTestCity(String name) {
+        City city = new City();
+        city.setName(name);
+        return cityRepository.saveAndFlush(city);
     }
 }
