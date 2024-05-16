@@ -12,6 +12,7 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -108,12 +109,30 @@ class TripRepositoryTest {
         trip3.setDepartureTime(LocalDateTime.now().plusHours(3));
         trip3.setArrivalTime(LocalDateTime.now());
         trip3.setPrice(50);
+        Trip trip4 = new Trip();
+        trip4.setDeparture(city);
+        trip4.setArrival(city);
+        trip4.setBus(bus);
+        trip4.setDepartureTime(LocalDateTime.now());
+        trip4.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip4.setPrice(50);
+        trip4.setStatus(TripStatus.DEPARTED);
+        Trip trip5 = new Trip();
+        trip5.setDeparture(city);
+        trip5.setArrival(city);
+        trip5.setBus(bus);
+        trip5.setDepartureTime(LocalDateTime.now());
+        trip5.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip5.setPrice(50);
+        trip5.setStatus(TripStatus.ARRIVED);
 
         entityManager.persist(trip1);
         entityManager.persist(trip2);
         entityManager.persist(trip3);
+        entityManager.persist(trip4);
+        entityManager.persist(trip5);
 
-        Iterable<Trip> trips = tripRepository.findByDepartureOrderByDepartureTimeAsc(city, Limit.of(2));
+        Iterable<Trip> trips = tripRepository.findByDepartureAndStatusNotInOrderByDepartureTimeAsc(city, Arrays.asList(TripStatus.DEPARTED, TripStatus.ARRIVED), Limit.of(2));
         assertThat(trips).hasSize(2).contains(trip1, trip2);
     }
 
@@ -143,12 +162,21 @@ class TripRepositoryTest {
         trip3.setDepartureTime(LocalDateTime.now());
         trip3.setArrivalTime(LocalDateTime.now().plusHours(1));
         trip3.setPrice(50);
+        Trip trip4 = new Trip();
+        trip4.setDeparture(city);
+        trip4.setArrival(city);
+        trip4.setBus(bus);
+        trip4.setDepartureTime(LocalDateTime.now());
+        trip4.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip4.setPrice(50);
+        trip4.setStatus(TripStatus.ARRIVED);
 
         entityManager.persist(trip1);
         entityManager.persist(trip2);
         entityManager.persist(trip3);
+        entityManager.persist(trip4);
 
-        Iterable<Trip> trips = tripRepository.findByArrivalOrderByArrivalTimeAsc(city, Limit.of(2));
+        Iterable<Trip> trips = tripRepository.findByArrivalAndStatusNotOrderByArrivalTimeAsc(city, TripStatus.ARRIVED, Limit.of(2));
         assertThat(trips).hasSize(2).contains(trip3, trip2);
     }
 

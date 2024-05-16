@@ -442,7 +442,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(5, TripStatus.ONTIME, 0);
+        Trip trip = createTripForStatusTesting(5, 60, TripStatus.ONTIME, 0);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -454,7 +454,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnTimeTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(11, TripStatus.ONTIME, 0);
+        Trip trip = createTripForStatusTesting(11, 60, TripStatus.ONTIME, 0);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -466,7 +466,7 @@ class TripControllerTestIT {
 
     @Test
     void givenDelayedTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(3, TripStatus.DELAYED, 5);
+        Trip trip = createTripForStatusTesting(3, 60, TripStatus.DELAYED, 5);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -478,7 +478,7 @@ class TripControllerTestIT {
 
     @Test
     void givenDelayedTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(5, TripStatus.DELAYED, 11);
+        Trip trip = createTripForStatusTesting(5, 60, TripStatus.DELAYED, 11);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -490,7 +490,7 @@ class TripControllerTestIT {
 
     @Test
     void givenOnboardingTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(0, TripStatus.ONBOARDING, 0);
+        Trip trip = createTripForStatusTesting(0, 60, TripStatus.ONBOARDING, 0);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
@@ -502,13 +502,37 @@ class TripControllerTestIT {
 
     @Test
     void givenOnboardingDelayredTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
-        Trip trip = createTripForStatusTesting(-5, TripStatus.ONBOARDING, 5);
+        Trip trip = createTripForStatusTesting(-5, 60, TripStatus.ONBOARDING, 5);
 
         await().atMost(10, SECONDS)
            .untilAsserted(() -> {
                RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
                            .then().statusCode(HttpStatus.OK.value())
                            .body("status", equalTo("DEPARTED"));
+           });
+    }
+
+    @Test
+    void givenDepartedTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(-60, 0, TripStatus.DEPARTED, 0);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ARRIVED"));
+           });
+    }
+
+    @Test
+    void givenDepartedDelayredTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException{
+        Trip trip = createTripForStatusTesting(-65, -5, TripStatus.DEPARTED, 5);
+
+        await().atMost(10, SECONDS)
+           .untilAsserted(() -> {
+               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                           .then().statusCode(HttpStatus.OK.value())
+                           .body("status", equalTo("ARRIVED"));
            });
     }
 
@@ -605,9 +629,10 @@ class TripControllerTestIT {
         return repository.saveAndFlush(trip);
     }
    
-    private Trip createTripForStatusTesting(Integer departureMinutes, TripStatus status, Integer delay) {
+    private Trip createTripForStatusTesting(Integer departureMinutes, Integer arrivalMinutes, TripStatus status, Integer delay) {
         Trip trip = createTestTrip();
         trip.setDepartureTime(LocalDateTime.now().plusMinutes(departureMinutes).truncatedTo(ChronoUnit.SECONDS));
+        trip.setArrivalTime(LocalDateTime.now().plusMinutes(arrivalMinutes).truncatedTo(ChronoUnit.SECONDS));
         trip.setStatus(status);
         trip.setDelay(delay);
         return repository.saveAndFlush(trip);

@@ -3,6 +3,7 @@ package pt.ua.deti.tqs.backend.services;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import jakarta.transaction.Transactional;
@@ -46,8 +47,7 @@ public class TripStatusSchedulerService {
             for (City city : allCities) {
                 List<Trip> departureTrips = tripService.getTripsForDigitalSignageDeparture(city);
                 List<Trip> arrivalTrips = tripService.getTripsForDigitalSignageArrival(city);
-                log.info("Sending updates to digital signage for city: {}", city.getName());
-                log.info(departureTrips.size() + " departure trips and " + arrivalTrips.size() + " arrival trips");
+                
                 template.convertAndSend("/signage/cities/" + city.getId() + "/departure", departureTrips);
                 template.convertAndSend("/signage/cities/" + city.getId() + "/arrival", arrivalTrips);
             }
@@ -59,6 +59,7 @@ public class TripStatusSchedulerService {
     public void updateTripStatus(Trip trip) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime departureTime = trip.getDepartureTime();
+        LocalDateTime arrivalTime = trip.getArrivalTime();
         TripStatus status = trip.getStatus();
         int delay = trip.getDelay();
     
@@ -71,6 +72,12 @@ public class TripStatusSchedulerService {
                 (ChronoUnit.MINUTES.between(now, departureTime) <= 0 ||
                 (delay > 0 && ChronoUnit.MINUTES.between(now, departureTime.plusMinutes(delay)) <= 0))) {
             trip.setStatus(TripStatus.DEPARTED);
+            tripService.updateTrip(trip);
+        }
+        else if (status == TripStatus.DEPARTED && 
+                (ChronoUnit.MINUTES.between(now, arrivalTime) <= 0 ||
+                (delay > 0 && ChronoUnit.MINUTES.between(now, arrivalTime.plusMinutes(delay)) <= 0))) {
+            trip.setStatus(TripStatus.ARRIVED);
             tripService.updateTrip(trip);
         }
     }
