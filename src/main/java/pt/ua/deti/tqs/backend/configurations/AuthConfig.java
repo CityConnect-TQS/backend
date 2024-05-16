@@ -24,6 +24,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import pt.ua.deti.tqs.backend.components.AuthEntryPointJwt;
 import pt.ua.deti.tqs.backend.components.AuthTokenFilter;
+import pt.ua.deti.tqs.backend.constants.UserRole;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.services.CustomUserDetailsService;
 
@@ -49,44 +50,45 @@ public class AuthConfig {
         return authProvider;
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(
-                    auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/**").permitAll()
-                                .requestMatchers(HttpMethod.POST, "/api/backoffice/user/**").permitAll()
+                auth -> auth.requestMatchers(HttpMethod.POST, "/api/public/user/**").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/backoffice/user/**").permitAll()
 
-                                .requestMatchers("/api/public/user/{id}/**")
-                                .access((authentication, context) -> new AuthorizationDecision(
-                                        checkUserId(authentication, context.getVariables().get("id"))))
+                    .requestMatchers("/api/public/user/{id}/**")
+                    .access((authentication, context) -> new AuthorizationDecision(
+                        checkUserId(authentication, context.getVariables().get("id"))))
 
-                                .requestMatchers("/api/backoffice/user/{id}/**")
-                                .access((authentication, context) -> new AuthorizationDecision(
-                                        checkUserId(authentication, context.getVariables().get("id"))))
+                    .requestMatchers("/api/backoffice/user/{id}/**")
+                    .access((authentication, context) -> new AuthorizationDecision(
+                        checkUserId(authentication, context.getVariables().get("id"))))
 
-                                .requestMatchers("/api/public/reservation/{id}/**")
-                                .access((authentication, context) -> new AuthorizationDecision(
-                                        checkReservationId(authentication, context.getVariables().get("id"))))
+                    .requestMatchers("/api/public/reservation/{id}/**")
+                    .access((authentication, context) -> new AuthorizationDecision(
+                        checkReservationId(authentication, context.getVariables().get("id"))
+                            || ((User) authentication.get().getPrincipal()).getRoles().contains(UserRole.STAFF)))
 
-                                .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/public/trip/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/public/trip/**").permitAll()
 
-                                .requestMatchers("/actuator/**").permitAll()
-                                .requestMatchers("/api/docs/**").permitAll()
-                                .requestMatchers("/api/docs-config/**").permitAll()
+                    .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers("/api/docs/**").permitAll()
+                    .requestMatchers("/api/docs-config/**").permitAll()
 
-                                .requestMatchers("/api/public/**").hasAuthority("USER")
-                                .requestMatchers("/api/backoffice/**").hasAnyAuthority("STAFF", "ADMIN")
-                                .anyRequest().authenticated())
+                    .requestMatchers("/api/public/**").hasAuthority("USER")
+                    .requestMatchers("/api/backoffice/**").hasAnyAuthority("STAFF", "ADMIN")
+                    .anyRequest().authenticated())
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(authenticationJwtTokenFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
-    }
+        }
 
     private boolean checkUserId(Supplier<Authentication> authentication, String id) {
         return ((User) authentication.get().getPrincipal()).getId().equals(Long.parseLong(id));
@@ -99,18 +101,17 @@ public class AuthConfig {
 
     private SecurityScheme createAPIKeyScheme() {
         return new SecurityScheme().type(SecurityScheme.Type.HTTP)
-                                   .bearerFormat("JWT")
-                                   .scheme("bearer");
+                .bearerFormat("JWT")
+                .scheme("bearer");
     }
 
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI().addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
-                            .components(new Components().addSecuritySchemes
-                                                                ("Bearer Authentication", createAPIKeyScheme()))
-                            .info(new Info().title("CityConnect API")
-                                            .description("Every API endpoint used in the app.")
-                                            .version("1.0"));
+                .components(new Components().addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()))
+                .info(new Info().title("CityConnect API")
+                        .description("Every API endpoint used in the app.")
+                        .version("1.0"));
     }
 
     @Bean
@@ -122,7 +123,7 @@ public class AuthConfig {
         configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(
                 Arrays.asList("X-Requested-With", "Cache-Control", "Cookie", "Origin", "Content-Type", "Accept",
-                              "Authorization"));
+                        "Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
