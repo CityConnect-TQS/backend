@@ -64,7 +64,6 @@ class ReservationServiceTest {
 
         user = new User();
         user.setId(1L);
-        user.setUsername("user");
         user.setPassword("password");
         user.setEmail("user@ua.pt");
         user.setName("User");
