@@ -62,6 +62,10 @@ public class LoginSteps {
 
     @And("I am logged out")
     public void iAmLoggedOut() {
+        if (!driver.findElements(By.id("userText")).isEmpty()) {
+            driver.findElement(By.id("logoutBtn")).click();
+            driver.findElement(By.id("avatarBtn")).click();
+        }
         assertThat(driver.findElements(By.id("userText"))).isEmpty();
     }
 }
