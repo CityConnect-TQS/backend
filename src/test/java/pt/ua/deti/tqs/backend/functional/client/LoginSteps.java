@@ -57,7 +57,7 @@ public class LoginSteps {
 
     @Then("I should be logged in as {string}")
     public void iShouldBeLoggedIn(String name) {
-        assertThat(driver.findElement(By.id("userText")).getText()).isEqualTo("Signed in as" + name);
+        assertThat(driver.findElement(By.id("userText")).getText()).isEqualTo("Signed in as\n" + name);
     }
 
     @And("I am logged out")
