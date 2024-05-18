@@ -5,8 +5,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.text.ParseException;
@@ -16,23 +14,13 @@ import java.util.Date;
 import java.util.NoSuchElementException;
 
 public class CheckTripsSteps {
-    private WebDriver driver;
-
-    @When("I navigate to {string}")
-    public void iNavigateTo(String url) {
-        FirefoxOptions options = new FirefoxOptions();
-        options.addArguments("-headless");
-
-        driver = new FirefoxDriver(options);
-        driver.get(url);
-    }
+    private final WebDriver driver = ClientCucumberTest.getDriver();
 
     @When("I fill in departure with {int}")
     public void iFillInDepartureWith(int number) throws InterruptedException {
         Thread.sleep(1000);
         driver.findElement(By.id("origin")).click();
         driver.findElement(By.id("departure" + number)).click();
-
     }
 
     @And("I fill in arrival with {int}")
