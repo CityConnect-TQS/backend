@@ -12,8 +12,8 @@ public class DeleteTripSteps {
 
     @And("I click on the delete button of the trip {int} witch is from {string} to {string}")
     public void iClickOnTheDeleteButtonOfTheTripWitchIsFromTo(int tripId, String origin, String destination) {
-        assertThat(driver.findElement(By.id("departureName-" + tripId)).getText()).isEqualTo(origin);
-        assertThat(driver.findElement(By.id("arrivalName-" + tripId)).getText()).isEqualTo(destination);
+        assertThat(driver.findElement(By.id("departureName" + tripId)).getText()).isEqualTo(origin);
+        assertThat(driver.findElement(By.id("arrivalName" + tripId)).getText()).isEqualTo(destination);
         driver.findElement(By.id("deleteTrip-" + tripId)).click();
     }
 
