@@ -4,11 +4,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.data.domain.Limit;
+
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Trip;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -77,6 +81,124 @@ class TripRepositoryTest {
 
         Iterable<Trip> allTrips = tripRepository.findAll();
         assertThat(allTrips).hasSize(3).contains(trip1, trip2, trip3);
+    }
+
+    @Test
+    void whenFindTripsByDeparture_thenReturnCorrectTrips() {
+        City city = Utils.generateCity(entityManager);
+        Bus bus = Utils.generateBus(entityManager);
+
+        Trip trip1 = new Trip();
+        trip1.setDeparture(city);
+        trip1.setArrival(city);
+        trip1.setBus(bus);
+        trip1.setDepartureTime(LocalDateTime.now().plusHours(1));
+        trip1.setArrivalTime(LocalDateTime.now());
+        trip1.setPrice(50);
+        Trip trip2 = new Trip();
+        trip2.setDeparture(city);
+        trip2.setArrival(city);
+        trip2.setBus(bus);
+        trip2.setDepartureTime(LocalDateTime.now().plusHours(2));
+        trip2.setArrivalTime(LocalDateTime.now());
+        trip2.setPrice(100);
+        Trip trip3 = new Trip();
+        trip3.setDeparture(city);
+        trip3.setArrival(city);
+        trip3.setBus(bus);
+        trip3.setDepartureTime(LocalDateTime.now().plusHours(3));
+        trip3.setArrivalTime(LocalDateTime.now());
+        trip3.setPrice(50);
+        Trip trip4 = new Trip();
+        trip4.setDeparture(city);
+        trip4.setArrival(city);
+        trip4.setBus(bus);
+        trip4.setDepartureTime(LocalDateTime.now());
+        trip4.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip4.setPrice(50);
+        trip4.setStatus(TripStatus.DEPARTED);
+        Trip trip5 = new Trip();
+        trip5.setDeparture(city);
+        trip5.setArrival(city);
+        trip5.setBus(bus);
+        trip5.setDepartureTime(LocalDateTime.now());
+        trip5.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip5.setPrice(50);
+        trip5.setStatus(TripStatus.ARRIVED);
+
+        entityManager.persist(trip1);
+        entityManager.persist(trip2);
+        entityManager.persist(trip3);
+        entityManager.persist(trip4);
+        entityManager.persist(trip5);
+
+        Iterable<Trip> trips = tripRepository.findByDepartureAndStatusNotInOrderByDepartureTimeAsc(city, Arrays.asList(TripStatus.DEPARTED, TripStatus.ARRIVED), Limit.of(2));
+        assertThat(trips).hasSize(2).contains(trip1, trip2);
+    }
+
+    @Test
+    void whenFindTripsByArrival_thenReturnCorrectTrips() {
+        City city = Utils.generateCity(entityManager);
+        Bus bus = Utils.generateBus(entityManager);
+
+        Trip trip1 = new Trip();
+        trip1.setDeparture(city);
+        trip1.setArrival(city);
+        trip1.setBus(bus);
+        trip1.setDepartureTime(LocalDateTime.now());
+        trip1.setArrivalTime(LocalDateTime.now().plusHours(3));
+        trip1.setPrice(50);
+        Trip trip2 = new Trip();
+        trip2.setDeparture(city);
+        trip2.setArrival(city);
+        trip2.setBus(bus);
+        trip2.setDepartureTime(LocalDateTime.now());
+        trip2.setArrivalTime(LocalDateTime.now().plusHours(2));
+        trip2.setPrice(100);
+        Trip trip3 = new Trip();
+        trip3.setDeparture(city);
+        trip3.setArrival(city);
+        trip3.setBus(bus);
+        trip3.setDepartureTime(LocalDateTime.now());
+        trip3.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip3.setPrice(50);
+        Trip trip4 = new Trip();
+        trip4.setDeparture(city);
+        trip4.setArrival(city);
+        trip4.setBus(bus);
+        trip4.setDepartureTime(LocalDateTime.now());
+        trip4.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip4.setPrice(50);
+        trip4.setStatus(TripStatus.ARRIVED);
+
+        entityManager.persist(trip1);
+        entityManager.persist(trip2);
+        entityManager.persist(trip3);
+        entityManager.persist(trip4);
+
+        Iterable<Trip> trips = tripRepository.findByArrivalAndStatusNotOrderByArrivalTimeAsc(city, TripStatus.ARRIVED, Limit.of(2));
+        assertThat(trips).hasSize(2).contains(trip3, trip2);
+    }
+
+    @Test
+    void whenCreatTrip_thenTripShouldBeCreated() {
+        City city = Utils.generateCity(entityManager);
+        Bus bus = Utils.generateBus(entityManager);
+
+        Trip trip = new Trip();
+        trip.setDeparture(city);
+        trip.setArrival(city);
+        trip.setBus(bus);
+        trip.setDepartureTime(LocalDateTime.now());
+        trip.setArrivalTime(LocalDateTime.now().plusHours(1));
+        trip.setPrice(50);
+        entityManager.persistAndFlush(trip);
+
+        assertThat(trip.getId()).isNotNull();
+        Trip found = tripRepository.findById(trip.getId()).orElse(null);
+        assertThat(found).isEqualTo(trip);
+        assertThat(found.getStatus()).isEqualTo(TripStatus.ONTIME);
+        assertThat(found.getDelay()).isEqualTo(0);
     }
 
     @Test

@@ -1,12 +1,21 @@
 package pt.ua.deti.tqs.backend.services;
 
 import lombok.AllArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import pt.ua.deti.tqs.backend.components.JwtUtils;
 import pt.ua.deti.tqs.backend.constants.UserRole;
+import pt.ua.deti.tqs.backend.dtos.LoginRequest;
+import pt.ua.deti.tqs.backend.dtos.LoginResponse;
 import pt.ua.deti.tqs.backend.dtos.NormalUserDto;
 import pt.ua.deti.tqs.backend.entities.User;
 import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,12 +23,23 @@ import java.util.Optional;
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtils jwtUtils;
 
-    public User createUser(User user) {
-        return userRepository.save(user);
+    public LoginResponse createUser(User user) {
+        if (userRepository.findUserByEmail(user.getEmail()) != null) {
+            return null;
+        }
+
+        String unencryptedPassword = user.getPassword();
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userRepository.save(user);
+
+        return this.loginUser(new LoginRequest(user.getEmail(), unencryptedPassword));
     }
 
-    public User createNormalUser(NormalUserDto user) {
+    public LoginResponse createNormalUser(NormalUserDto user) {
         return createUser(convertToNormalUser(user));
     }
 
@@ -27,11 +47,31 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
-    public User loginUser(String email, String password) {
-        return userRepository.findUserByEmailAndPassword(email, password);
+    public User getUserByEmail(String email) {
+        return userRepository.findUserByEmail(email);
     }
 
-    public User updateUser(Long id, User user) {
+    public LoginResponse loginUser(LoginRequest loginRequest) {
+        User user = this.getUserByEmail(loginRequest.getEmail());
+
+        if (user == null) {
+            return null;
+        }
+
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), loginRequest.getPassword()));
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+        Long expires = jwtUtils.getExpirationFromJwtToken(jwt).getTime();
+
+        User userDetails = (User) authentication.getPrincipal();
+
+        return new LoginResponse(userDetails.getId(), userDetails.getName(), userDetails.getEmail(),
+                                 userDetails.getRoles(), jwt, expires);
+    }
+
+    public LoginResponse updateUser(Long id, User user) {
         Optional<User> existingOpt = userRepository.findById(id);
 
         if (existingOpt.isEmpty()) {
@@ -39,15 +79,15 @@ public class UserService {
         }
 
         User existing = existingOpt.get();
-        existing.setUsername(user.getUsername());
         existing.setName(user.getName());
         existing.setEmail(user.getEmail());
-        existing.setPassword(user.getPassword());
-        existing.setRoles(user.getRoles());
-        return userRepository.save(existing);
+        existing.setPassword(passwordEncoder.encode(user.getPassword()));
+        existing.setRoles(new ArrayList<>(user.getRoles()));
+        userRepository.save(existing);
+        return this.loginUser(new LoginRequest(user.getEmail(), user.getPassword()));
     }
 
-    public User updateNormalUser(Long id, NormalUserDto user) {
+    public LoginResponse updateNormalUser(Long id, NormalUserDto user) {
         return updateUser(id, convertToNormalUser(user));
     }
 
@@ -57,7 +97,6 @@ public class UserService {
 
     private User convertToNormalUser(NormalUserDto userDTO) {
         User user = new User();
-        user.setUsername(userDTO.getUsername());
         user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());
         user.setPassword(userDTO.getPassword());

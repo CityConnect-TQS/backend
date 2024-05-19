@@ -4,6 +4,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import pt.ua.deti.tqs.backend.entities.*;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 public class Utils {
     public static Bus generateBus(TestEntityManager entityManager) {
@@ -25,7 +26,6 @@ public class Utils {
         User user = new User();
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
-        user.setUsername("johndoe");
         user.setPassword("password");
         entityManager.persistAndFlush(user);
         return user;
@@ -48,7 +48,7 @@ public class Utils {
         reservation.setTrip(generateTrip(entityManager));
         reservation.setUser(generateUser(entityManager));
         reservation.setPrice(50);
-        reservation.setSeats(2);
+        reservation.setSeats(Arrays.asList("1A", "1B"));
         entityManager.persistAndFlush(reservation);
         return reservation;
     }

@@ -10,7 +10,7 @@ import pt.ua.deti.tqs.backend.repositories.ReservationRepository;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Collections;
 
 @Service
 @AllArgsConstructor
@@ -23,15 +23,22 @@ public class ReservationService {
 
     public Reservation createReservation(Reservation reservation, Currency currency) {
         Trip trip = tripService.getTrip(reservation.getTrip().getId(), currency);
+        List<Reservation> tripReservations = reservationRepository.findByTripId(trip.getId());
 
-        if (trip.getFreeSeats() < reservation.getSeats()) {
+        if (trip.getFreeSeats() < reservation.getSeats().size()) {
             return null;
+        }
+        
+        for (Reservation savedReservation : tripReservations) {
+            if (!Collections.disjoint(savedReservation.getSeats(), reservation.getSeats())) {
+                return null;
+            }
         }
 
         User user = userService.getUser(reservation.getUser().getId());
         reservation.setTrip(trip);
         reservation.setUser(user);
-        reservation.setPrice(trip.getPrice() * reservation.getSeats());
+        reservation.setPrice(trip.getPrice() * reservation.getSeats().size());
 
         Reservation save = reservationRepository.save(reservation);
         trip.calculateFreeSeats();
@@ -67,28 +74,15 @@ public class ReservationService {
         return all;
     }
 
-    public Reservation updateReservation(Reservation reservation, Currency currency) {
-        Optional<Reservation> existingOpt = reservationRepository.findById(reservation.getId());
-        Trip trip = tripService.getTrip(reservation.getTrip().getId(), currency);
+    public void deleteReservationById(Long id) {
+        Reservation reservation = reservationRepository.findById(id).orElse(null);
 
-        if (existingOpt.isEmpty()) {
-            return null;
+        if (reservation == null) {
+            return;
         }
 
-        Reservation existing = existingOpt.get();
-        existing.setUser(reservation.getUser());
-        existing.setSeats(reservation.getSeats());
-        existing.setTrip(reservation.getTrip());
-        reservation.setPrice(trip.getPrice() * reservation.getSeats());
-
-        Reservation save = reservationRepository.save(reservation);
-        reservation.getTrip().calculateFreeSeats();
-        tripRepository.save(reservation.getTrip());
-        return save;
-    }
-
-    public void deleteReservationById(Long id) {
         Trip trip = reservationRepository.findById(id).map(Reservation::getTrip).orElse(null);
+        reservation.getUser().getReservations().remove(reservation);
         reservationRepository.deleteById(id);
 
         if (trip != null) {

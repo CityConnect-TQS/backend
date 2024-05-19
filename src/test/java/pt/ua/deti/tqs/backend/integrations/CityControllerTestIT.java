@@ -11,11 +11,13 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.repositories.CityRepository;
+import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = {"trip.status.update.delay=1000"})
 @Testcontainers
 class CityControllerTestIT {
     @Container
@@ -39,6 +42,11 @@ class CityControllerTestIT {
     @Autowired
     private CityRepository repository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private String jwtToken;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", container::getJdbcUrl);
@@ -47,13 +55,26 @@ class CityControllerTestIT {
     }
 
     @BeforeEach
-    void setBASE_URL() {
+    public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
+
+        String body = "{\"password\":\"" + "password" +
+                "\",\"name\":\"" + "name" +
+                "\",\"email\":\"" + "email" +
+                "\",\"roles\":[\"USER\",\"STAFF\"]}";
+
+        jwtToken = RestAssured.given()
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when().post(BASE_URL + "/api/backoffice/user")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .extract().jsonPath().getString("token");
     }
 
     @AfterEach
     public void resetDb() {
         repository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
@@ -61,10 +82,12 @@ class CityControllerTestIT {
         City city = new City();
         city.setName("Aveiro");
 
-        RestAssured.given().contentType(ContentType.JSON).body(city)
-                   .when().post(BASE_URL + "/api/backoffice/city")
-                   .then().statusCode(HttpStatus.CREATED.value())
-                   .body("name", equalTo(city.getName()));
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken)
+                .body(city)
+                .when().post(BASE_URL + "/api/backoffice/city")
+                .then().statusCode(HttpStatus.CREATED.value())
+                .body("name", equalTo(city.getName()));
 
         List<City> found = repository.findAll();
         assertThat(found).extracting(City::getName).containsOnly(city.getName());
@@ -119,25 +142,27 @@ class CityControllerTestIT {
         City city = createTestCity("Aveiro");
 
         city.setName("Porto");
-        RestAssured.given().contentType(ContentType.JSON).body(city)
-                   .when().put(BASE_URL + "/api/backoffice/city/" + city.getId())
-                   .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(city.getName()));
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).body(city)
+                .when().put(BASE_URL + "/api/backoffice/city/" + city.getId())
+                .then().statusCode(HttpStatus.OK.value()).body("name", equalTo(city.getName()));
     }
 
     @Test
     void whenUpdateInvalidCity_thenStatus404() {
         City city = createTestCity("Aveiro");
 
-        RestAssured.given().contentType(ContentType.JSON).body(city)
-                   .when().put(BASE_URL + "/api/backoffice/city/999")
-                   .then().statusCode(HttpStatus.NOT_FOUND.value());
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).body(city)
+                .when().put(BASE_URL + "/api/backoffice/city/999")
+                .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     @Test
     void whenDeleteCity_thenStatus200() {
         City city = createTestCity("Aveiro");
 
-        RestAssured.when().delete(BASE_URL + "/api/backoffice/city/" + city.getId())
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/backoffice/city/" + city.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(city.getId())).isEmpty();

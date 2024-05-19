@@ -1,6 +1,8 @@
 package pt.ua.deti.tqs.backend.services;
 
 import lombok.AllArgsConstructor;
+
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import pt.ua.deti.tqs.backend.entities.Bus;
@@ -10,8 +12,11 @@ import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParameters;
 import pt.ua.deti.tqs.backend.specifications.trip.TripSearchParametersSpecification;
+import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,6 +73,27 @@ public class TripService {
         return trip;
     }
 
+    public List<Trip> getTripsForDigitalSignageDeparture(City city) {
+        List<Trip> trips = tripRepository.findByDepartureAndStatusNotInOrderByDepartureTimeAsc(city, Arrays.asList(TripStatus.DEPARTED, TripStatus.ARRIVED), Limit.of(6));
+        return trips;
+    }
+
+    public List<Trip> getTripsForDigitalSignageArrival(City city) {
+        List<Trip> trips = tripRepository.findByArrivalAndStatusNotOrderByArrivalTimeAsc(city, TripStatus.ARRIVED, Limit.of(6));
+        return trips;
+    }
+
+    public TripSeatsMapDto getTripWithSeatsMap(Long id, Currency currency) {
+        Trip trip = getTrip(id, currency);
+        TripSeatsMapDto tripSeatsMapDto = null;
+
+        if(trip != null) {
+            tripSeatsMapDto = new TripSeatsMapDto(trip);
+        }
+
+        return tripSeatsMapDto;
+    }
+
     public Trip updateTrip(Trip trip) {
         Optional<Trip> existingOpt = tripRepository.findById(trip.getId());
 
@@ -81,6 +107,10 @@ public class TripService {
         existing.setDepartureTime(trip.getDepartureTime());
         existing.setArrivalTime(trip.getArrivalTime());
         existing.setPrice(trip.getPrice());
+        existing.setStatus(trip.getStatus());
+        if (trip.getStatus() == TripStatus.DELAYED) {
+            existing.setDelay(trip.getDelay());
+        }
 
         Trip save = tripRepository.save(existing);
         save.calculateFreeSeats();

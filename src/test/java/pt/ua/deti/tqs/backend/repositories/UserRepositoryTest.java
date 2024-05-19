@@ -22,7 +22,6 @@ class UserRepositoryTest {
     @Test
     void whenFindUserById_thenReturnUser() {
         User user = new User();
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("johndoe@ua.pt");
         user.setPassword("password");
@@ -42,19 +41,16 @@ class UserRepositoryTest {
     @Test
     void whenFindAllUsers_thenReturnAllUsers() {
         User user1 = new User();
-        user1.setUsername("johndoe");
         user1.setName("John Doe");
         user1.setEmail("johndoe@ua.pt");
         user1.setPassword("password");
         user1.setRoles(List.of(UserRole.USER));
         User user2 = new User();
-        user2.setUsername("janedoe");
         user2.setName("Jane Doe");
         user2.setEmail("janedoe@ua.pt");
         user2.setPassword("password");
         user2.setRoles(List.of(UserRole.USER, UserRole.STAFF));
         User user3 = new User();
-        user3.setUsername("johndoe2");
         user3.setName("John Doe");
         user3.setEmail("johndoe2@ua.pt");
         user3.setPassword("password");
@@ -71,7 +67,6 @@ class UserRepositoryTest {
     @Test
     void whenDeleteUserById_thenUserShouldNotExist() {
         User user = new User();
-        user.setUsername("johndoe");
         user.setName("John Doe");
         user.setEmail("joghndoe@ua.pt");
         user.setPassword("password");

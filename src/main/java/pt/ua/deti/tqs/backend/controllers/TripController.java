@@ -7,6 +7,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import pt.ua.deti.tqs.backend.dtos.TripSeatsMapDto;
 import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.helpers.Currency;
 import pt.ua.deti.tqs.backend.services.TripService;
@@ -38,10 +40,10 @@ public class TripController {
 
     @GetMapping("{id}")
     @Operation(summary = "Get a trip")
-    public ResponseEntity<Trip> getTrip(
+    public ResponseEntity<TripSeatsMapDto> getTrip(
             @PathVariable @Parameter(name = "Trip ID", example = "1") Long id,
             @RequestParam(required = false) @Parameter(name = "Currency", example = "EUR") Currency currency) {
-        Trip trip = tripService.getTrip(id, currency);
+        TripSeatsMapDto trip = tripService.getTripWithSeatsMap(id, currency);
         HttpStatus status = trip != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
         return new ResponseEntity<>(trip, status);
     }

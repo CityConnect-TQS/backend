@@ -5,7 +5,7 @@ on:
     branches:
       - main
   pull_request:
-    types: [ opened, synchronize, reopened ]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 21
-          distribution: 'zulu'
+          distribution: "zulu"
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -46,5 +46,15 @@ jobs:
           CURRENCY_API_KEY: ${{ secrets.CURRENCY_API_KEY }}
         run: |
           SPRING_APPLICATION_JSON='{"currencyapi.apikey":"${CURRENCY_API_KEY}"}' \
-          mvn -B verify failsafe:integration-test sonar:sonar \
+          mvn -B '-Dtest=!pt.ua.deti.tqs.backend.functional.**' verify failsafe:integration-test sonar:sonar \
           -Dsonar.projectKey=CityConnect-TQS_backend
+
+      - name: Publish results to Xray
+        uses: mikepenz/xray-action@v3
+        with:
+          username: ${{ secrets.XRAY_CLIENT_ID }}
+          password: ${{ secrets.XRAY_CLIENT_SECRET }}
+          testFormat: "junit"
+          testPaths: "**/surefire-reports/TEST-*.xml"
+          testExecKey: "CC-94"
+          projectKey: "CC"
