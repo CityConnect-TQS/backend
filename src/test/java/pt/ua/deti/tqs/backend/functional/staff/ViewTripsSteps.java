@@ -1,20 +1,19 @@
 package pt.ua.deti.tqs.backend.functional.staff;
 
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import pt.ua.deti.tqs.backend.functional.client.ClientCucumberTest;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class ViewTripsSteps {
-    private final WebDriver driver = ClientCucumberTest.getDriver();
+    private final WebDriver driver = StaffCucumberTest.getDriver();
 
-    @Then("I should see a trip with departure {string} and destination {string}")
-    public void iShouldSeeATripWithDepartureAndDestination(String departure, String destination) {
-        driver.findElement(By.id("deparureName")).getText().equals(departure);
-        driver.findElement(By.id("destinationName")).getText().equals(destination);
-
+    @And("I should see a list of trips")
+    public void iShouldSeeAListOfTrips() {
+        assertThat(driver.findElement(By.id("trips")).isDisplayed()).isTrue();
     }
-
 
 
 }
