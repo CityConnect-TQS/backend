@@ -53,7 +53,7 @@ jobs:
       - name: Build and test using Selenium
         run: |
           cd backend
-          mvn -B '-Dtest=pt.ua.deti.tqs.backend.functional.client.ClientCucumberTest' test
+          mvn -B '-Dtest=pt.ua.deti.tqs.backend.functional.client.ClientCucumberTest,pt.ua.deti.tqs.backend.functional.staff.StaffCucumberTest' test
 
       - name: Down containers
         run: |

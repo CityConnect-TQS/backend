@@ -8,8 +8,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.http.HttpStatus;
 
@@ -21,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 public class LoginSteps {
-    private WebDriver driver;
+    private final WebDriver driver = StaffCucumberTest.getDriver();
 
     @Given("There is a staff account with name {string}, email {string} and password {string}")
     public void thereIsAStaffAccountWithEmailAndPassword(String name, String email, String password) {
@@ -55,10 +53,6 @@ public class LoginSteps {
 
     @Given("I navigate to {string}")
     public void iNavigateTo(String url) {
-        FirefoxOptions options = new FirefoxOptions();
-        options.addArguments("-headless");
-
-        driver = new FirefoxDriver(options);
         driver.get(url);
     }
 
@@ -102,6 +96,10 @@ public class LoginSteps {
 
     @And("I am logged out")
     public void iAmLoggedOut() {
+        if (!driver.findElements(By.id("userText")).isEmpty()) {
+            driver.findElement(By.id("logoutBtn")).click();
+            driver.findElement(By.id("avatarBtn")).click();
+        }
         assertThat(driver.findElements(By.id("userText"))).isEmpty();
     }
 
