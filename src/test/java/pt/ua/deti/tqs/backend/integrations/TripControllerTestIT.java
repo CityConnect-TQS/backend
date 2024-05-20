@@ -1,9 +1,8 @@
 package pt.ua.deti.tqs.backend.integrations;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-
-import org.apache.commons.exec.ExecuteException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +12,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
@@ -23,42 +21,29 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
-import org.springframework.web.socket.sockjs.client.SockJsClient;
-import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import static org.awaitility.Awaitility.await;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
+import pt.ua.deti.tqs.backend.constants.TripStatus;
 import pt.ua.deti.tqs.backend.entities.Bus;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.repositories.BusRepository;
 import pt.ua.deti.tqs.backend.repositories.CityRepository;
 import pt.ua.deti.tqs.backend.repositories.TripRepository;
-import pt.ua.deti.tqs.backend.constants.TripStatus;
 import pt.ua.deti.tqs.backend.repositories.UserRepository;
 
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -102,8 +87,7 @@ class TripControllerTestIT {
     @BeforeEach
     public void createAdminUser() {
         BASE_URL = "http://localhost:" + randomServerPort;
-        this.webSocketStompClient = new WebSocketStompClient(new SockJsClient(
-            List.of(new WebSocketTransport(new StandardWebSocketClient()))));
+        this.webSocketStompClient = new WebSocketStompClient(new StandardWebSocketClient());
 
         String body = "{\"password\":\"" + "password" +
                 "\",\"name\":\"" + "name" +
@@ -111,11 +95,11 @@ class TripControllerTestIT {
                 "\",\"roles\":[\"USER\",\"STAFF\"]}";
 
         jwtToken = RestAssured.given()
-                .contentType(ContentType.JSON)
-                .body(body)
-                .when().post(BASE_URL + "/api/backoffice/user")
-                .then().statusCode(HttpStatus.CREATED.value())
-                .extract().jsonPath().getString("token");
+                              .contentType(ContentType.JSON)
+                              .body(body)
+                              .when().post(BASE_URL + "/api/backoffice/user")
+                              .then().statusCode(HttpStatus.CREATED.value())
+                              .extract().jsonPath().getString("token");
     }
 
     @AfterEach
@@ -144,7 +128,7 @@ class TripControllerTestIT {
         trip.setPrice(10.0);
 
         RestAssured.given().contentType(ContentType.JSON).body(trip)
-                .header("Authorization", "Bearer " + jwtToken)
+                   .header("Authorization", "Bearer " + jwtToken)
                    .when().post(BASE_URL + "/api/backoffice/trip")
                    .then().statusCode(HttpStatus.CREATED.value())
                    .body("price", equalTo((float) trip.getPrice()))
@@ -189,14 +173,13 @@ class TripControllerTestIT {
     }
 
     @Test
-
     void givenTrips_whenGetTripsWithCurrencyUsd_thenStatus401() {
         Trip trip1 = createTestTrip();
         Trip trip2 = createTestTrip();
 
         RestAssured.given()
-                .header("Authorization", "Bearer " + jwtToken)
-                .when().get(BASE_URL + "/api/public/trip?currency=USD")
+                   .header("Authorization", "Bearer " + jwtToken)
+                   .when().get(BASE_URL + "/api/public/trip?currency=USD")
                    .then().statusCode(HttpStatus.OK.value());
     }
 
@@ -388,7 +371,7 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "?currency=USD")
-                .then().statusCode(HttpStatus.OK.value());
+                   .then().statusCode(HttpStatus.OK.value());
     }
 
     @Test
@@ -411,7 +394,7 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         RestAssured.given().header("Authorization", "Bearer " + jwtToken)
-                .when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
+                   .when().get(BASE_URL + "/api/public/trip/" + trip.getId() + "/reservations")
                    .then().statusCode(HttpStatus.UNAUTHORIZED.value());
     }
 
@@ -422,7 +405,8 @@ class TripControllerTestIT {
         trip.setPrice(20.0);
         trip.setStatus(TripStatus.DELAYED);
         trip.setDelay(5);
-        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON).body(trip)
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON)
+                   .body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) trip.getPrice()));
@@ -437,7 +421,8 @@ class TripControllerTestIT {
         Trip trip = createTestTrip();
 
         trip.setPrice(20.0);
-        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON).body(trip)
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).given().contentType(ContentType.JSON)
+                   .body(trip)
                    .when().put(BASE_URL + "/api/backoffice/trip/999")
                    .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
@@ -446,7 +431,8 @@ class TripControllerTestIT {
     void whenDeleteTrip_thenStatus200() {
         Trip trip = createTestTrip();
 
-        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
+        RestAssured.given().header("Authorization", "Bearer " + jwtToken).when()
+                   .delete(BASE_URL + "/api/backoffice/trip/" + trip.getId())
                    .then().statusCode(HttpStatus.OK.value());
 
         assertThat(repository.findById(trip.getId())).isEmpty();
@@ -464,103 +450,103 @@ class TripControllerTestIT {
     }
 
     @Test
-    void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
+    void givenOnTimeTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException {
         Trip trip = createTripForStatusTesting(5, 60, TripStatus.ONTIME, 0);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("ONBOARDING"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("ONBOARDING"));
+               });
     }
 
     @Test
-    void givenOnTimeTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
+    void givenOnTimeTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException {
         Trip trip = createTripForStatusTesting(11, 60, TripStatus.ONTIME, 0);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("ONTIME"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("ONTIME"));
+               });
     }
 
     @Test
-    void givenDelayedTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException{
+    void givenDelayedTrip_whenTheOnboardingTimeArrives_thenStatusChanges() throws InterruptedException {
         Trip trip = createTripForStatusTesting(3, 60, TripStatus.DELAYED, 5);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("ONBOARDING"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("ONBOARDING"));
+               });
     }
 
     @Test
-    void givenDelayedTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException{
+    void givenDelayedTrip_whenNotOnboardingTime_thenStatusDoesntChange() throws InterruptedException {
         Trip trip = createTripForStatusTesting(5, 60, TripStatus.DELAYED, 11);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("DELAYED"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("DELAYED"));
+               });
     }
 
     @Test
-    void givenOnboardingTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
+    void givenOnboardingTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException {
         Trip trip = createTripForStatusTesting(0, 60, TripStatus.ONBOARDING, 0);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("DEPARTED"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("DEPARTED"));
+               });
     }
 
     @Test
-    void givenOnboardingDelayredTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException{
+    void givenOnboardingDelayredTrip_whenDepartureTimeArrives_thenStatusChanges() throws InterruptedException {
         Trip trip = createTripForStatusTesting(-5, 60, TripStatus.ONBOARDING, 5);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("DEPARTED"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("DEPARTED"));
+               });
     }
 
     @Test
-    void givenDepartedTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException{
+    void givenDepartedTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException {
         Trip trip = createTripForStatusTesting(-60, 0, TripStatus.DEPARTED, 0);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("ARRIVED"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("ARRIVED"));
+               });
     }
 
     @Test
-    void givenDepartedDelayredTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException{
+    void givenDepartedDelayredTrip_whenArrivalTimeArrives_thenStatusChanges() throws InterruptedException {
         Trip trip = createTripForStatusTesting(-65, -5, TripStatus.DEPARTED, 5);
 
         await().atMost(10, SECONDS)
-           .untilAsserted(() -> {
-               RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
-                           .then().statusCode(HttpStatus.OK.value())
-                           .body("status", equalTo("ARRIVED"));
-           });
+               .untilAsserted(() -> {
+                   RestAssured.when().get(BASE_URL + "/api/public/trip/" + trip.getId())
+                              .then().statusCode(HttpStatus.OK.value())
+                              .body("status", equalTo("ARRIVED"));
+               });
     }
 
     @Test
-    void whenScheduledSignageUpdateDepartureRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+    void whenScheduledSignageUpdateDepartureRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException, TimeoutException {
 
         City city = createTestCity("Aveiro");
         City city2 = createTestCity("Porto");
@@ -572,14 +558,17 @@ class TripControllerTestIT {
 
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
-        }).get(1, SECONDS);
+        StompSession session =
+                webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws",
+                                                  new StompSessionHandlerAdapter() {
+                                                  }).get(1, SECONDS);
 
-        session.subscribe("/signage/cities/" + city.getId() + "/departure" , new StompFrameHandler() {
+        session.subscribe("/signage/cities/" + city.getId() + "/departure", new StompFrameHandler() {
 
             @Override
             public Type getPayloadType(StompHeaders headers) {
-                return new TypeReference<List<Trip>>() {}.getType();
+                return new TypeReference<List<Trip>>() {
+                }.getType();
             }
 
             @Override
@@ -589,16 +578,16 @@ class TripControllerTestIT {
         });
 
         await()
-            .atMost(30, TimeUnit.SECONDS)
-            .untilAsserted(() -> {
-                List<Trip> receivedTrips = blockingQueue.poll();
-                assertThat(receivedTrips).isNotNull()
-                                         .hasSize(2);
+                .atMost(30, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    List<Trip> receivedTrips = blockingQueue.poll();
+                    assertThat(receivedTrips).isNotNull()
+                                             .hasSize(2);
                 });
     }
 
     @Test
-    void whenScheduledSignageUpdateArrivalRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException,  TimeoutException {
+    void whenScheduledSignageUpdateArrivalRuns_thenWebSocketIsSent() throws InterruptedException, ExecutionException, TimeoutException {
 
         City city = createTestCity("Aveiro");
         City city2 = createTestCity("Porto");
@@ -610,14 +599,17 @@ class TripControllerTestIT {
 
         webSocketStompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        StompSession session = webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws", new StompSessionHandlerAdapter() {
-        }).get(1, SECONDS);
+        StompSession session =
+                webSocketStompClient.connectAsync("ws://localhost:" + randomServerPort + "/api/public/ws",
+                                                  new StompSessionHandlerAdapter() {
+                                                  }).get(1, SECONDS);
 
-        session.subscribe("/signage/cities/" + city2.getId() + "/arrival" , new StompFrameHandler() {
+        session.subscribe("/signage/cities/" + city2.getId() + "/arrival", new StompFrameHandler() {
 
             @Override
             public Type getPayloadType(StompHeaders headers) {
-                return new TypeReference<List<Trip>>() {}.getType();
+                return new TypeReference<List<Trip>>() {
+                }.getType();
             }
 
             @Override
@@ -627,11 +619,11 @@ class TripControllerTestIT {
         });
 
         await()
-            .atMost(30, TimeUnit.SECONDS)
-            .untilAsserted(() -> {
-                List<Trip> receivedTrips = blockingQueue.poll();
-                assertThat(receivedTrips).isNotNull()
-                                         .hasSize(2);
+                .atMost(30, TimeUnit.SECONDS)
+                .untilAsserted(() -> {
+                    List<Trip> receivedTrips = blockingQueue.poll();
+                    assertThat(receivedTrips).isNotNull()
+                                             .hasSize(2);
                 });
     }
 

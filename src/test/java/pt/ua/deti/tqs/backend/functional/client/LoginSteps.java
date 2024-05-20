@@ -6,8 +6,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
@@ -17,14 +15,10 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class LoginSteps {
-    private WebDriver driver;
+    private final WebDriver driver = ClientCucumberTest.getDriver();
 
     @Given("I navigate to {string}")
     public void iNavigateTo(String url) {
-        FirefoxOptions options = new FirefoxOptions();
-        options.addArguments("-headless");
-
-        driver = new FirefoxDriver(options);
         driver.get(url);
     }
 
@@ -63,11 +57,15 @@ public class LoginSteps {
 
     @Then("I should be logged in as {string}")
     public void iShouldBeLoggedIn(String name) {
-        assertThat(driver.findElement(By.id("userText")).getText()).isEqualTo("Signed in as" + name);
+        assertThat(driver.findElement(By.id("userText")).getText()).isEqualTo("Signed in as\n" + name);
     }
 
     @And("I am logged out")
     public void iAmLoggedOut() {
+        if (!driver.findElements(By.id("userText")).isEmpty()) {
+            driver.findElement(By.id("logoutBtn")).click();
+            driver.findElement(By.id("avatarBtn")).click();
+        }
         assertThat(driver.findElements(By.id("userText"))).isEmpty();
     }
 }
