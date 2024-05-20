@@ -54,10 +54,9 @@ public class BookReservationSteps {
         assertThat(driver.findElement(By.id("submitBtn")).isEnabled()).isFalse();
     }
 
-    @When("I click on seat {string} and seat {string}")
-    public void iClickOnSeat(String seat1, String seat2) throws InterruptedException{
-        driver.findElement(By.id("seat" + seat1)).click();
-        driver.findElement(By.id("seat" + seat2)).click();
+    @When("I click on seat {string}")
+    public void iClickOnSeat(String seat) throws InterruptedException{
+        driver.findElement(By.id("seat" + seat)).click();
     }
 
     @When("I click on submit button")
@@ -75,5 +74,20 @@ public class BookReservationSteps {
     @Then("the seats {string} and {string} should appear")
     public void theSeatsShouldAppear(String seat1, String seat2) {
     	assertThat(driver.findElement(By.id("selectedSeats")).getText()).isEqualTo(seat1 + ", " + seat2);
+    }
+
+    @When("I sign out")
+    public void iSignOut() throws InterruptedException{
+        wait = new WebDriverWait(driver, Duration.of(10, ChronoUnit.SECONDS));
+        wait.until(d -> d.findElement(By.id("avatarBtn")).isDisplayed());
+        TimeUnit.SECONDS.sleep(1);
+        driver.findElement(By.id("avatarBtn")).click();
+        driver.findElement(By.id("logoutBtn")).click();
+    }
+
+    @Then("a message showing I am not signed in should appear")
+    public void aMessageShowingIAmNotSignedInShouldAppear() throws InterruptedException{
+        TimeUnit.SECONDS.sleep(1);
+        driver.findElement(By.id("notSignedInChip"));
     }
 }
