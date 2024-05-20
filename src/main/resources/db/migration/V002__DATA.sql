@@ -17,7 +17,8 @@ INSERT INTO "user" (id, name, email, password)
 VALUES ('1', 'admin', 'admin@gmail.com', '$2a$10$k8mC7DODg5iNmrp3B7V.R.jupGeT.gA7cFYqzcAo/w9bYVFZ7F4ty');
 
 INSERT INTO role (user_id, roles)
-VALUES (1, 2);
+VALUES (1, 2),
+       (1, 0);
 
 INSERT INTO public.trip (id, arrival_time, departure_time, free_seats, price, arrival_id, bus_id, departure_id)
 VALUES (1, '2024-05-08 08:00:00', '2024-05-08 06:00:00', 36, 10.00, 3, 1, 1),
