@@ -64,6 +64,7 @@ CREATE TABLE reservation
     trip_id   BIGINT                                  NOT NULL,
     "user_id" BIGINT                                  NOT NULL,
     price     DOUBLE PRECISION,
+    checked_in BOOLEAN DEFAULT FALSE                  NOT NULL,
     CONSTRAINT pk_reservation PRIMARY KEY (id)
 );
 

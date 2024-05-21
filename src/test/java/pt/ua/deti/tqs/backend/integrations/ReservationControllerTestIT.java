@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.support.CronExpression;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
@@ -22,7 +21,6 @@ import pt.ua.deti.tqs.backend.repositories.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -129,7 +127,6 @@ class ReservationControllerTestIT {
 
         repository.deleteById(reservation1.getId());
         repository.deleteById(reservation2.getId());
-        System.out.println(repository.findAll());
     }
 
     @Test
@@ -202,14 +199,34 @@ class ReservationControllerTestIT {
     }
 
     @Test
-    void whenDeleteReservationWithInvalidId_thenStatus200() {
-        // This assures the trip != null conditionl
+    void whenDeleteReservationWithInvalidId_thenStatus404() {
         RestAssured.given().contentType(ContentType.JSON)
                 .header("Authorization", "Bearer " + jwtToken).when().delete(BASE_URL + "/api/public/reservation/999")
-                   .then().statusCode(HttpStatus.OK.value());
+                   .then().statusCode(HttpStatus.NOT_FOUND.value());
 
         Reservation found = repository.findById(999L).orElse(null);
         assertThat(found).isNull();
+    }
+
+    @Test
+    void whenUpdateCheckedIn_thenReservationShouldBeCheckedIn() {
+        User user = userRepository.findAll().get(0);
+        Reservation reservation = createTestReservation(user);
+
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().patch(BASE_URL + "/api/public/reservation/" + reservation.getId() + "/check-in")
+                   .then().statusCode(HttpStatus.OK.value());
+
+        Reservation found = repository.findById(reservation.getId()).orElse(null);
+        assertThat(found).isNotNull();
+        assertThat(found.isCheckedIn()).isTrue();
+    }
+
+    @Test
+    void whenUpdateCheckedInInvalidReservation_thenShouldReturnNull() {
+        RestAssured.given().contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + jwtToken).when().patch(BASE_URL + "/api/public/reservation/" + 99 + "/check-in")
+                   .then().statusCode(HttpStatus.NOT_FOUND.value());
     }
 
     private Reservation createTestReservation(User user) {

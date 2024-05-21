@@ -212,14 +212,13 @@ class ReservationServiceTest {
     @Test
     void whenUpdateCheckedIn_thenReservationShouldBeCheckedIn() {
         Reservation checkedIn = reservationService.updateCheckedIn(1L);
-        System.out.println(checkedIn);
 
         assertThat(checkedIn).isNotNull();
         assertThat(checkedIn.isCheckedIn()).isTrue();
     }
 
     @Test
-    void whenUpdateCheckedInInvalidReservation_thenShouldReturnNul() {
+    void whenUpdateCheckedInInvalidReservation_thenShouldReturnNull() {
         Reservation checkedIn = reservationService.updateCheckedIn(12345L);
 
         assertThat(checkedIn).isNull();
