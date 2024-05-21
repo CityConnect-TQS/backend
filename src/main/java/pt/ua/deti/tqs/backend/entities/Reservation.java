@@ -34,4 +34,9 @@ public class Reservation {
     @Column
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private double price;
+
+    @Column
+    @JoinColumn(nullable = false)
+    private boolean checkedIn = false;
+
 }

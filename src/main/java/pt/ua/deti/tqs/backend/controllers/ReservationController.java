@@ -45,4 +45,13 @@ public class ReservationController {
         reservationService.deleteReservationById(id);
         return new ResponseEntity<>(HttpStatus.OK);
     }
+
+    @PatchMapping("{id}/check-in")
+    @Operation(summary = "Check-in a reservation")
+    public ResponseEntity<Reservation> checkInReservation(
+            @PathVariable @Parameter(name = "Reservation ID", example = "1") Long id) {
+        Reservation checkedIn = reservationService.updateCheckedIn(id);
+        HttpStatus status = checkedIn != null ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+        return new ResponseEntity<>(checkedIn, status);
+    }
 }

@@ -103,4 +103,14 @@ public class ReservationService {
                     currencyService.convertEurToCurrency(reservation.getTrip().getPrice(), currency));
         }
     }
+
+    public Reservation updateCheckedIn(Long id){
+        Reservation reservation = reservationRepository.findById(id).orElse(null);
+        
+        if (reservation == null){
+            return null;
+        }
+        reservation.setCheckedIn(true);
+        return reservationRepository.save(reservation);
+    }
 }

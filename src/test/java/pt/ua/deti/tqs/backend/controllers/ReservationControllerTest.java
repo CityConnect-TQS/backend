@@ -163,4 +163,41 @@ class ReservationControllerTest {
 
         verify(service, times(1)).deleteReservationById(1L);
     }
+
+    @Test
+    void whenCheckInReservation_thenCheckInReservation() {
+        User user = new User();
+        user.setId(1L);
+
+        Trip trip = new Trip();
+        trip.setId(1L);
+
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setTrip(trip);
+        reservation.setUser(user);
+        reservation.setCheckedIn(true);
+
+        when(service.updateCheckedIn(1L)).thenReturn(reservation);
+
+        RestAssuredMockMvc.given().mockMvc(mockMvc)
+                          .when().patch("/api/public/reservation/1/check-in")
+                          .then().statusCode(200)
+                          .body("user.id", is(1))
+                          .body("trip.id", is(1))
+                          .body("checkedIn", is(true));
+
+        verify(service, times(1)).updateCheckedIn(1L);
+    }
+
+    @Test
+    void whenCheckInInvalidReservation_thenNotFound() {
+        when(service.updateCheckedIn(99L)).thenReturn(null);
+
+        RestAssuredMockMvc.given().mockMvc(mockMvc)
+                          .when().patch("/api/public/reservation/99/check-in")
+                          .then().statusCode(404);
+
+        verify(service, times(1)).updateCheckedIn(99L);
+    }
 }
