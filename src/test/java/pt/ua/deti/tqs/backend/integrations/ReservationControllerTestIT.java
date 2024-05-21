@@ -4,7 +4,6 @@ import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -150,7 +149,8 @@ class ReservationControllerTestIT {
         Reservation reservation = createTestReservation(user);
 
         RestAssured.given().contentType(ContentType.JSON)
-                .header("Authorization", "Bearer " + jwtToken).when().get(BASE_URL + "/api/public/reservation/" + reservation.getId() + "?currency=EUR")
+                   .header("Authorization", "Bearer " + jwtToken)
+                   .when().get(BASE_URL + "/api/public/reservation/" + reservation.getId() + "?currency=EUR")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", equalTo((float) reservation.getPrice()))
                    .body("seats", equalTo(reservation.getSeats()))
@@ -164,7 +164,9 @@ class ReservationControllerTestIT {
         User user = userRepository.findAll().get(0);
         Reservation reservation = createTestReservation(user);
 
-        RestAssured.when().get(BASE_URL + "/api/public/reservation/" + reservation.getId() + "?currency=USD")
+        RestAssured.given().contentType(ContentType.JSON)
+                   .header("Authorization", "Bearer " + jwtToken)
+                   .when().get(BASE_URL + "/api/public/reservation/" + reservation.getId() + "?currency=USD")
                    .then().statusCode(HttpStatus.OK.value())
                    .body("price", not(equalTo((float) reservation.getPrice())))
                    .body("seats", equalTo(reservation.getSeats()))
