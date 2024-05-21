@@ -157,9 +157,25 @@ class ReservationControllerTest {
 
     @Test
     void whenDeleteReservation_thenDeleteReservation() {
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+
+        when(service.deleteReservationById(1L)).thenReturn(true);
+
         RestAssuredMockMvc.given().mockMvc(mockMvc)
                           .when().delete("/api/public/reservation/1")
                           .then().statusCode(200);
+
+        verify(service, times(1)).deleteReservationById(1L);
+    }
+
+    @Test
+    void whenDeleteInvalidReservation_thenReturnNotFound() {
+        when(service.deleteReservationById(99L)).thenReturn(false);
+
+        RestAssuredMockMvc.given().mockMvc(mockMvc)
+                          .when().delete("/api/public/reservation/1")
+                          .then().statusCode(404);
 
         verify(service, times(1)).deleteReservationById(1L);
     }
