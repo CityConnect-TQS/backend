@@ -47,7 +47,11 @@ jobs:
 
       - name: Up containers
         env:
-          CURRENCY_API_KEY: ${{ secrets.CURRENCY_API_KEY }}
+          PRODUCTION: true
+          CURRENCY_API_KEY: ${{secrets.CURRENCY_API_KEY}}
+          JWT_PRIVATE: ${{secrets.JWT_PRIVATE}}
+          JWT_PUBLIC: ${{secrets.JWT_PUBLIC}}
+          POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}}
         run: docker compose -f compose.prod.yaml up -d --build
 
       - name: Build and test using Selenium
