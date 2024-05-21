@@ -73,7 +73,8 @@ public class AuthConfig {
                                 .access((authentication, context) -> new AuthorizationDecision(
                                         checkReservationId(authentication, context.getVariables().get("id"))
                                                 || ((User) authentication.get().getPrincipal()).getRoles()
-                                                .contains(UserRole.STAFF)))
+                                                                                               .contains(
+                                                                                                       UserRole.STAFF)))
 
                                 .requestMatchers(HttpMethod.GET, "/api/public/bus/**").permitAll()
                                 .requestMatchers(HttpMethod.GET, "/api/public/city/**").permitAll()
@@ -121,8 +122,11 @@ public class AuthConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOrigin("http://staff.localhost");
+        configuration.addAllowedOrigin("http://staff.deti-tqs-16.ua.pt");
         configuration.addAllowedOrigin("http://digital.localhost");
+        configuration.addAllowedOrigin("http://digital.deti-tqs-16.ua.pt");
         configuration.addAllowedOrigin("http://localhost");
+        configuration.addAllowedOrigin("http://deti-tqs-16.ua.pt");
         configuration.setAllowCredentials(true);
         configuration.setAllowedMethods(Arrays.asList("POST", "GET", "PUT", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(
