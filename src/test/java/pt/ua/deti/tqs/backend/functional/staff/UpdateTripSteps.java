@@ -24,6 +24,12 @@ public class UpdateTripSteps {
         driver.findElement(By.id("priceInput")).sendKeys(String.valueOf(newPrice));
     }
 
+    @And("I search for trips in {string}")
+    public void iSearchForTrips(String city) {
+        driver.findElement(By.id("searchTrips")).click();
+        driver.findElement(By.id("searchTrips")).sendKeys(city);
+    }
+
     @And("I click on the save button")
     public void iClickOnTheSaveButton() {
         driver.findElement(By.id("saveTripBtn")).click();
