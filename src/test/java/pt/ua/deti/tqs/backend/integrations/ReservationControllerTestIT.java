@@ -160,7 +160,6 @@ class ReservationControllerTestIT {
     }
 
     @Test
-    @Disabled("This test is disabled because the currency conversion is not working")
     void whenGetReservationByIdAndCurrencyUsd_thenStatus200() {
         User user = userRepository.findAll().get(0);
         Reservation reservation = createTestReservation(user);

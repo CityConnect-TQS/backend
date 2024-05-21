@@ -256,7 +256,6 @@ class UserControllerTestIT {
     }
 
     @Test
-    @Disabled("USD should be activated")
     void whenGetUserReservationsByUserIdAndCurrencyUsd_thenStatus200() {
         String body = "{\"password\":\"" + "password" +
                 "\",\"name\":\"" + "name" +
