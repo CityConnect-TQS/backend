@@ -14,8 +14,9 @@ Feature: Update trip
     And I click on the avatar
     Then I should be logged in as "João Miguel"
     And I should see a list of trips
-    And I click on the edit button of the trip 18 witch is from "Murtosa" to "Aveiro"
-    And I change the price from 20 to 15
+    And I search for trips in "Aveiro"
+    And I click on the edit button of the trip 51 witch is from "Murtosa" to "Aveiro"
+    And I change the price from 10 to 15
     And I click on the save button
     And I should see a edit button
     Then I should see 15 as the price of the trip
@@ -28,8 +29,9 @@ Feature: Update trip
     And I click on the avatar
     Then I should be logged in as "João Miguel"
     And I should see a list of trips
-    And I click on the edit button of the trip 19 witch is from "Murtosa" to "Aveiro"
-    And I change the arrival city to "Murtosa"
+    And I search for trips in "Aveiro"
+    And I click on the edit button of the trip 2 witch is from "Aveiro" to "Ovar"
+    And I change the arrival city to "Aveiro"
     And I click on the save button
     Then I should see a error message saying "The departure city must be different from the arrival city."
 
