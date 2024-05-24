@@ -13,8 +13,9 @@ Feature: Delete trip
 
   Scenario: Delete a trip
     And I should see a list of trips
-    And I click on the delete button of the trip 20 witch is from "Aveiro" to "Ovar"
-    And I should see a modal with the title "Delete Trip Aveiro - Ovar"
+    And I search for trips in "Aveiro"
+    And I click on the delete button of the trip 1 witch is from "Murtosa" to "Aveiro"
+    And I should see a modal with the title "Delete Trip Murtosa - Aveiro"
     And I click on the delete button
     Then I should see a success message with the text "Trip deleted successfully"
 
