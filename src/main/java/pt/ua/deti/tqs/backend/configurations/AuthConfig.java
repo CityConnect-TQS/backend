@@ -121,10 +121,6 @@ public class AuthConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://staff.localhost");
-        configuration.addAllowedOrigin("http://staff.deti-tqs-16.ua.pt");
-        configuration.addAllowedOrigin("http://digital.localhost");
-        configuration.addAllowedOrigin("http://digital.deti-tqs-16.ua.pt");
         configuration.addAllowedOrigin("http://localhost");
         configuration.addAllowedOrigin("http://deti-tqs-16.ua.pt");
         configuration.setAllowCredentials(true);
