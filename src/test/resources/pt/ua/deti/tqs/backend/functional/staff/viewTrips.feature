@@ -2,7 +2,7 @@ Feature: View list of trips
 
   Background: Sign in as a staff member
     Given There is a staff account with name "Jane Doe", email "janedoe3@ua.pt" and password "aBeautifulPassword2024"
-    And I navigate to "http://staff.localhost/login"
+    And I navigate to "http://localhost/staff/login"
     And I click on the avatar
     And I am logged out
     And I fill in email with "janedoe3@ua.pt"

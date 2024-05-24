@@ -1,7 +1,7 @@
 Feature: Update trip
 
   Background: Logged out
-    And I navigate to "http://staff.localhost/login"
+    And I navigate to "http://localhost/staff/login"
     And I click on the avatar
     And I am logged out
     And I click on the avatar
