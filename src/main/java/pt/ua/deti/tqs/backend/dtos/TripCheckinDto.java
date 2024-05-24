@@ -17,7 +17,6 @@ import pt.ua.deti.tqs.backend.entities.Trip;
 import pt.ua.deti.tqs.backend.entities.Reservation;
 
 import java.util.Collection;
-import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -70,9 +69,9 @@ public class TripCheckinDto {
         this.delay = trip.getDelay();
         Collection<Reservation> reservations = trip.getReservations();
 
-        this.checkedInSeats = bus.getCapacity() - (reservations != null ? reservations.stream()
-                                                                                 .reduce(0,
-                                                                                         (acc, r) -> acc + (r.isCheckedIn() ? r.getSeats().size(): 0),
-                                                                                         Integer::sum) : 0);
+        this.checkedInSeats = (reservations != null ? reservations.stream()
+                                                                   .reduce(0,
+                                                                    (acc, r) -> acc + (r.isCheckedIn() ? r.getSeats().size(): 0),
+                                                                    Integer::sum) : 0);
     }
 }
