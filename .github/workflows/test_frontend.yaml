@@ -47,7 +47,7 @@ jobs:
 
       - name: Up containers
         env:
-          CURRENCY_API_KEY: ${{ secrets.CURRENCY_API_KEY }}
+          CURRENCY_API_KEY: ${{secrets.CURRENCY_API_KEY}}
         run: docker compose -f compose.prod.yaml up -d --build
 
       - name: Build and test using Selenium

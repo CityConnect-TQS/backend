@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class BookReservationSteps {
-    
+
     private final WebDriver driver = ClientCucumberTest.getDriver();
     private Wait<WebDriver> wait;
 
@@ -70,7 +70,7 @@ public class BookReservationSteps {
         TimeUnit.SECONDS.sleep(1);
         assertThat(driver.findElement(By.id("confirmText")).getText()).isEqualTo(message);
     }
-    
+
     @Then("the seats {string} and {string} should appear")
     public void theSeatsShouldAppear(String seat1, String seat2) {
     	assertThat(driver.findElement(By.id("selectedSeats")).getText()).isEqualTo(seat1 + ", " + seat2);

@@ -25,8 +25,9 @@ public class LoginSteps {
     @And("I click on the avatar")
     public void iClickOnTheAvatar() throws InterruptedException {
         WebDriverWait wait = new WebDriverWait(driver, Duration.of(10, ChronoUnit.SECONDS));
+        TimeUnit.SECONDS.sleep(2);
         wait.until(d -> d.findElement(By.id("avatarBtn")).isDisplayed());
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.SECONDS.sleep(2);
         driver.findElement(By.id("avatarBtn")).click();
     }
 
