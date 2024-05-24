@@ -21,7 +21,7 @@ public class ClientCucumberTest {
     public static WebDriver getDriver() {
         if (driver == null) {
             FirefoxOptions options = new FirefoxOptions();
-            options.addArguments("-headless");
+//            options.addArguments("-headless");
             driver = new FirefoxDriver(options);
         }
         return driver;
