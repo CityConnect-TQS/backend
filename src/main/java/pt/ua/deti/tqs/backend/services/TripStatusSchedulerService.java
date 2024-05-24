@@ -3,7 +3,6 @@ package pt.ua.deti.tqs.backend.services;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import jakarta.transaction.Transactional;
@@ -11,10 +10,13 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import pt.ua.deti.tqs.backend.constants.TripStatus;
+import pt.ua.deti.tqs.backend.dtos.TripCheckinDto;
 import pt.ua.deti.tqs.backend.entities.City;
 import pt.ua.deti.tqs.backend.entities.Trip;
 
@@ -47,9 +49,12 @@ public class TripStatusSchedulerService {
             for (City city : allCities) {
                 List<Trip> departureTrips = tripService.getTripsForDigitalSignageDeparture(city);
                 List<Trip> arrivalTrips = tripService.getTripsForDigitalSignageArrival(city);
+
+                List<TripCheckinDto> departureTripsDto = departureTrips.stream().map(trip -> new TripCheckinDto(trip)).collect(Collectors.toList());
+                List<TripCheckinDto> arrivalTripsDto = arrivalTrips.stream().map(trip -> new TripCheckinDto(trip)).collect(Collectors.toList());
                 
-                template.convertAndSend("/signage/cities/" + city.getId() + "/departure", departureTrips);
-                template.convertAndSend("/signage/cities/" + city.getId() + "/arrival", arrivalTrips);
+                template.convertAndSend("/signage/cities/" + city.getId() + "/departure", departureTripsDto);
+                template.convertAndSend("/signage/cities/" + city.getId() + "/arrival", arrivalTripsDto);
             }
         } catch (Exception e) {
             log.error("Error occurred while updating trip statuses: {}", e.getMessage(), e);
