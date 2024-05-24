@@ -9,7 +9,7 @@ Feature: Book a trip reservation
     Then I should be redirected to "Book reservation" page
     And the submit button should be disabled
 
-    When I click on seat "1A" 
+    When I click on seat "1A"
     And I click on seat "1B"
     And I click on submit button
     Then I should be redirected to "Book confirmation" page
@@ -23,9 +23,9 @@ Feature: Book a trip reservation
 
     When I click on seat "1A"
     And the submit button should be disabled
-    
+
   Scenario: Book a trip reservation but is not signed in
-    When I sign out 
+    When I sign out
     And I click on the first trip that shows up
     Then I should be redirected to "Book reservation" page
     And a message showing I am not signed in should appear

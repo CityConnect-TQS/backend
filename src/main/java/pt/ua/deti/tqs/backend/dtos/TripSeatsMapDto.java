@@ -3,7 +3,6 @@ package pt.ua.deti.tqs.backend.dtos;
 import java.time.LocalDateTime;
 
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

@@ -101,6 +101,7 @@ class ReservationServiceTest {
         Mockito.when(currencyService.convertEurToCurrency(30.0, Currency.USD)).thenReturn(33.0);
         Mockito.when(tripService.getTrip(trip.getId(), null)).thenReturn(trip);
         Mockito.when(userService.getUser(user.getId())).thenReturn(user);
+        Mockito.when(reservationRepository.save(Mockito.any())).thenReturn(reservation1);
     }
 
     @Test
@@ -206,5 +207,20 @@ class ReservationServiceTest {
         Reservation saved = reservationService.createReservation(reservation4, null);
 
         assertThat(saved).isNull();
+    }
+
+    @Test
+    void whenUpdateCheckedIn_thenReservationShouldBeCheckedIn() {
+        Reservation checkedIn = reservationService.updateCheckedIn(1L);
+
+        assertThat(checkedIn).isNotNull();
+        assertThat(checkedIn.isCheckedIn()).isTrue();
+    }
+
+    @Test
+    void whenUpdateCheckedInInvalidReservation_thenShouldReturnNull() {
+        Reservation checkedIn = reservationService.updateCheckedIn(12345L);
+
+        assertThat(checkedIn).isNull();
     }
 }

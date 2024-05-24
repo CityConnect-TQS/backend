@@ -74,11 +74,11 @@ public class ReservationService {
         return all;
     }
 
-    public void deleteReservationById(Long id) {
+    public boolean deleteReservationById(Long id) {
         Reservation reservation = reservationRepository.findById(id).orElse(null);
 
         if (reservation == null) {
-            return;
+            return false;
         }
 
         Trip trip = reservationRepository.findById(id).map(Reservation::getTrip).orElse(null);
@@ -89,6 +89,7 @@ public class ReservationService {
             trip.calculateFreeSeats();
             tripRepository.save(trip);
         }
+        return true;
     }
 
     private void updateReservationPrices(List<Reservation> all, Currency currency) {
@@ -102,5 +103,15 @@ public class ReservationService {
             reservation.getTrip().setPrice(
                     currencyService.convertEurToCurrency(reservation.getTrip().getPrice(), currency));
         }
+    }
+
+    public Reservation updateCheckedIn(Long id){
+        Reservation reservation = reservationRepository.findById(id).orElse(null);
+        
+        if (reservation == null){
+            return null;
+        }
+        reservation.setCheckedIn(true);
+        return reservationRepository.save(reservation);
     }
 }
