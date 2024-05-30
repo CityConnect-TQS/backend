@@ -21,6 +21,6 @@ Feature: Check existing trips
     When I navigate to "http://localhost"
     And I fill in departure with 3
     And I fill in arrival with 1
-    And I fill in date with "05/24/2025"
+    And I fill in date with "10/24/2025"
     And I search for trips
     Then I should see a message saying there "No trips available for this date"
